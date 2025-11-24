@@ -1,0 +1,144 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  /* GitHub Light Theme */
+  --background: #ffffff;
+  --foreground: #24292f;
+  
+  --card: #ffffff;
+  --card-foreground: #24292f;
+  
+  --popover: #ffffff;
+  --popover-foreground: #24292f;
+  
+  --primary: #1f883d; /* GitHub Green for primary actions usually, but user asked for "GitHub theme", their edges are usually blue or green. Let's go with Green for "Sign Up" style or Blue for "Accent". Plan said Blue (#0969da). */
+  --primary: #0969da;
+  --primary-foreground: #ffffff;
+  
+  --secondary: #f6f8fa;
+  --secondary-foreground: #24292f;
+  
+  --muted: #f6f8fa;
+  --muted-foreground: #57606a;
+  
+  --accent: #ddf4ff;
+  --accent-foreground: #0969da;
+  
+  --destructive: #cf222e;
+  --destructive-foreground: #ffffff;
+
+  --border: #d0d7de;
+  --input: #d0d7de;
+  --ring: #0969da;
+  
+  --radius: 0.375rem;
+
+  /* Chart colors */
+  --chart-1: #0969da;
+  --chart-2: #2da44e;
+  --chart-3: #8250df;
+  --chart-4: #cf222e;
+  --chart-5: #bf8700;
+  
+  /* Sidebar */
+  --sidebar: #f6f8fa;
+  --sidebar-foreground: #24292f;
+  --sidebar-primary: #0969da;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eaeef2;
+  --sidebar-accent-foreground: #24292f;
+  --sidebar-border: #d0d7de;
+  --sidebar-ring: #0969da;
+}
+
+.dark {
+  /* GitHub Dark Theme */
+  --background: #0d1117;
+  --foreground: #c9d1d9;
+  
+  --card: #161b22;
+  --card-foreground: #c9d1d9;
+  
+  --popover: #161b22;
+  --popover-foreground: #c9d1d9;
+  
+  --primary: #2f81f7;
+  --primary-foreground: #ffffff;
+  
+  --secondary: #21262d;
+  --secondary-foreground: #c9d1d9;
+  
+  --muted: #21262d;
+  --muted-foreground: #8b949e;
+  
+  --accent: #1f6feb;
+  --accent-foreground: #ffffff;
+  
+  --destructive: #f85149;
+  --destructive-foreground: #ffffff;
+  
+  --border: #30363d;
+  --input: #30363d;
+  --ring: #2f81f7;
+  
+  --sidebar: #010409;
+  --sidebar-foreground: #c9d1d9;
+  --sidebar-primary: #2f81f7;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #21262d;
+  --sidebar-accent-foreground: #c9d1d9;
+  --sidebar-border: #30363d;
+  --sidebar-ring: #2f81f7;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
