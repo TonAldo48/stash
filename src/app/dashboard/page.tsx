@@ -40,9 +40,10 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Card, CardContent } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import FileUpload05 from "@/components/ui/file-upload-1"
 
 const files = [
   { id: 1, name: "Documents", type: "folder", size: "-", modified: "2 days ago" },
@@ -101,22 +102,11 @@ export default function DashboardPage() {
                 </span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Upload File</DialogTitle>
-                <DialogDescription>
-                  Drag and drop files here or click to browse.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid w-full max-w-sm items-center gap-1.5">
-                  <Label htmlFor="picture">File</Label>
-                  <Input id="picture" type="file" />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="submit">Upload</Button>
-              </DialogFooter>
+            <DialogContent className="sm:max-w-xl p-0 border-none bg-transparent shadow-none">
+              <DialogTitle className="sr-only">Upload File</DialogTitle>
+              <Card className="w-full">
+                 <FileUpload05 />
+              </Card>
             </DialogContent>
           </Dialog>
          
@@ -203,4 +193,3 @@ export default function DashboardPage() {
     </div>
   )
 }
-
