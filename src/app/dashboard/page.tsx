@@ -193,10 +193,11 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <Breadcrumb>
-          <BreadcrumbList>
+    <div className="flex flex-col gap-3 sm:gap-4">
+      {/* Mobile: Stack breadcrumb and actions vertically */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Breadcrumb className="min-w-0 overflow-hidden">
+          <BreadcrumbList className="flex-wrap">
             <BreadcrumbItem>
               <BreadcrumbLink onClick={() => handleNavigate("/")} className="cursor-pointer">Home</BreadcrumbLink>
             </BreadcrumbItem>
@@ -204,13 +205,13 @@ export default function DashboardPage() {
                 <div key={crumb.path} className="flex items-center">
                     <BreadcrumbSeparator />
                     <BreadcrumbItem>
-                        <BreadcrumbLink onClick={() => handleNavigate(crumb.path)} className="cursor-pointer">{crumb.name}</BreadcrumbLink>
+                        <BreadcrumbLink onClick={() => handleNavigate(crumb.path)} className="cursor-pointer truncate max-w-[100px] sm:max-w-none">{crumb.name}</BreadcrumbLink>
                     </BreadcrumbItem>
                 </div>
             ))}
           </BreadcrumbList>
         </Breadcrumb>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center rounded-md border shadow-sm">
             <Button
               variant={view === "list" ? "secondary" : "ghost"}
@@ -267,7 +268,7 @@ export default function DashboardPage() {
                 </span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg p-0 border-none bg-transparent shadow-none">
+            <DialogContent className="sm:max-w-lg p-0 border-none bg-transparent shadow-none max-w-[calc(100%-2rem)]">
               <DialogTitle className="sr-only">Upload File</DialogTitle>
               <Card className="w-full">
                  <FileUpload 
@@ -285,13 +286,13 @@ export default function DashboardPage() {
       </div>
 
       {view === "list" ? (
-        <div className="rounded-md border">
+        <div className="rounded-md border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[40%]">Name</TableHead>
-                <TableHead>Size</TableHead>
-                <TableHead>Last Modified</TableHead>
+                <TableHead className="min-w-[200px]">Name</TableHead>
+                <TableHead className="hidden sm:table-cell">Size</TableHead>
+                <TableHead className="hidden md:table-cell">Last Modified</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -316,15 +317,19 @@ export default function DashboardPage() {
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2 cursor-pointer" onClick={() => handleItemClick(file)}>
                       {file.type === "folder" ? (
-                        <Folder className="h-4 w-4 text-blue-500 fill-blue-500" />
+                        <Folder className="h-4 w-4 text-blue-500 fill-blue-500 shrink-0" />
                       ) : (
-                        <File className="h-4 w-4 text-muted-foreground" />
+                        <File className="h-4 w-4 text-muted-foreground shrink-0" />
                       )}
-                      {file.name}
+                      <span className="truncate">{file.name}</span>
+                    </div>
+                    {/* Mobile: Show size under name */}
+                    <div className="sm:hidden text-xs text-muted-foreground mt-1 ml-6">
+                      {file.size}
                     </div>
                   </TableCell>
-                  <TableCell>{file.size}</TableCell>
-                  <TableCell>{new Date(file.modified).toLocaleDateString()}</TableCell>
+                  <TableCell className="hidden sm:table-cell">{file.size}</TableCell>
+                  <TableCell className="hidden md:table-cell">{new Date(file.modified).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -381,17 +386,18 @@ export default function DashboardPage() {
           No files found. Upload a file or create a folder to get started.
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {files.map((file) => (
             <Card key={file.id} className={`overflow-hidden ${isDeleting === file.id ? "opacity-50" : ""}`}>
               <CardContent 
-                className="p-4 flex flex-col items-center gap-2 relative group cursor-pointer"
+                className="p-3 sm:p-4 flex flex-col items-center gap-2 relative group cursor-pointer"
                 onClick={() => handleItemClick(file)}
               >
-                 <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                 {/* Always visible on mobile (touch), hover on desktop */}
+                 <div className="absolute right-1 top-1 sm:right-2 sm:top-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button size="icon" variant="ghost" className="h-6 w-6" disabled={isDeleting === file.id || isDownloading === file.id}>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 sm:h-6 sm:w-6" disabled={isDeleting === file.id || isDownloading === file.id}>
                           {isDownloading === file.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
@@ -420,13 +426,13 @@ export default function DashboardPage() {
                     </DropdownMenu>
                  </div>
                  {file.type === "folder" ? (
-                    <Folder className="h-12 w-12 text-blue-500 fill-blue-500" />
+                    <Folder className="h-10 w-10 sm:h-12 sm:w-12 text-blue-500 fill-blue-500" />
                   ) : (
-                    <File className="h-12 w-12 text-muted-foreground" />
+                    <File className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground" />
                   )}
                 <div className="text-center w-full">
-                  <div className="font-medium truncate text-sm" title={file.name}>{file.name}</div>
-                  <div className="text-xs text-muted-foreground">{file.size}</div>
+                  <div className="font-medium truncate text-xs sm:text-sm" title={file.name}>{file.name}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">{file.size}</div>
                 </div>
               </CardContent>
             </Card>

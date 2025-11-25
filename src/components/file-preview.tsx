@@ -149,7 +149,7 @@ export function FilePreview({
     switch (type) {
       case 'image':
         return (
-          <div className="h-full w-full flex items-center justify-center p-8">
+          <div className="h-full w-full flex items-center justify-center p-2 sm:p-4 md:p-8">
             <img 
               src={`data:image/*;base64,${content}`} 
               alt={file.name}
@@ -160,15 +160,15 @@ export function FilePreview({
         )
       case 'text':
         return (
-          <div className="h-full w-full flex items-center justify-center p-4 md:p-8">
-            <div className="w-full max-w-5xl h-full max-h-[calc(100vh-120px)] overflow-auto bg-zinc-900 text-zinc-100 p-6 rounded-lg font-mono text-sm whitespace-pre-wrap border border-white/10">
+          <div className="h-full w-full flex items-center justify-center p-2 sm:p-4 md:p-8">
+            <div className="w-full max-w-5xl h-full max-h-[calc(100vh-120px)] overflow-auto bg-zinc-900 text-zinc-100 p-3 sm:p-6 rounded-lg font-mono text-xs sm:text-sm whitespace-pre-wrap break-words border border-white/10">
               {atob(content)}
             </div>
           </div>
         )
       case 'pdf':
         return (
-          <div className="h-full w-full p-4 md:p-8 flex items-center justify-center">
+          <div className="h-full w-full p-2 sm:p-4 md:p-8 flex items-center justify-center">
             <iframe 
               src={`data:application/pdf;base64,${content}`}
               className="w-full max-w-5xl h-full max-h-[calc(100vh-120px)] rounded-lg bg-white"
@@ -178,7 +178,7 @@ export function FilePreview({
         )
       case 'video':
         return (
-          <div className="flex items-center justify-center h-full w-full p-8">
+          <div className="flex items-center justify-center h-full w-full p-2 sm:p-4 md:p-8">
             <video 
               controls 
               className="max-h-full max-w-full rounded-lg"
@@ -189,15 +189,15 @@ export function FilePreview({
             </video>
           </div>
         )
-      case 'audio':
+       case 'audio':
         return (
-          <div className="flex flex-col items-center justify-center h-full w-full gap-6">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
-              <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <div className="flex flex-col items-center justify-center h-full w-full gap-4 sm:gap-6 px-4">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
+              <svg className="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
               </svg>
             </div>
-            <p className="text-white/80 text-lg font-medium">{file.name}</p>
+            <p className="text-white/80 text-base sm:text-lg font-medium text-center truncate max-w-full">{file.name}</p>
             <audio controls className="w-full max-w-md">
               <source src={`data:audio/mpeg;base64,${content}`} />
               Your browser does not support the audio element.
@@ -230,25 +230,25 @@ export function FilePreview({
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 h-14 bg-black/60 backdrop-blur-sm border-b border-white/10 shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center justify-between px-2 sm:px-4 h-12 sm:h-14 bg-black/60 backdrop-blur-sm border-b border-white/10 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <Button 
             variant="ghost" 
             size="icon" 
-            className="text-white/70 hover:text-white hover:bg-white/10 rounded-full shrink-0"
+            className="text-white/70 hover:text-white hover:bg-white/10 rounded-full shrink-0 h-9 w-9 sm:h-10 sm:w-10"
             onClick={onClose}
           >
             <X className="h-5 w-5" />
           </Button>
-          <span className="text-white font-medium truncate">{file?.name}</span>
+          <span className="text-white font-medium truncate text-sm sm:text-base">{file?.name}</span>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {content && (
             <Button 
               variant="ghost" 
               size="icon"
-              className="text-white/70 hover:text-white hover:bg-white/10 rounded-full"
+              className="text-white/70 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 sm:h-10 sm:w-10"
               onClick={handleDownload}
             >
               <Download className="h-5 w-5" />
@@ -259,29 +259,23 @@ export function FilePreview({
 
       {/* Main Content */}
       <div className="flex-1 relative overflow-hidden">
-        {/* Navigation - Previous */}
+        {/* Navigation - Previous - Always visible on mobile for touch */}
         {hasPrevious && (
           <button 
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-12 w-12 rounded-full bg-black/50 text-white/70 hover:text-white hover:bg-black/70 border border-white/10 flex items-center justify-center transition-all opacity-0 hover:opacity-100 focus:opacity-100 group-hover:opacity-100"
+            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-black/50 text-white/70 hover:text-white hover:bg-black/70 border border-white/10 flex items-center justify-center transition-all opacity-70 sm:opacity-0 sm:hover:opacity-100 sm:focus:opacity-100 active:scale-95"
             onClick={onPrevious}
-            style={{ opacity: hasPrevious ? undefined : 0 }}
-            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-            onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}
           >
-            <ChevronLeft className="h-6 w-6" />
+            <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
         )}
 
-        {/* Navigation - Next */}
+        {/* Navigation - Next - Always visible on mobile for touch */}
         {hasNext && (
           <button 
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-12 w-12 rounded-full bg-black/50 text-white/70 hover:text-white hover:bg-black/70 border border-white/10 flex items-center justify-center transition-all"
+            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-black/50 text-white/70 hover:text-white hover:bg-black/70 border border-white/10 flex items-center justify-center transition-all opacity-70 sm:opacity-0 sm:hover:opacity-100 sm:focus:opacity-100 active:scale-95"
             onClick={onNext}
-            style={{ opacity: 0 }}
-            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-            onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}
           >
-            <ChevronRight className="h-6 w-6" />
+            <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
         )}
 
@@ -291,9 +285,9 @@ export function FilePreview({
         </div>
       </div>
 
-      {/* Footer with file info */}
+      {/* Footer with file info - hide keyboard hints on mobile */}
       <div className="h-10 px-4 flex items-center justify-center bg-black/60 backdrop-blur-sm border-t border-white/10 shrink-0">
-        <span className="text-white/40 text-xs">
+        <span className="text-white/40 text-xs hidden sm:inline">
           Press <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white/60 mx-1">Esc</kbd> to close
           {(hasNext || hasPrevious) && (
             <>
@@ -303,6 +297,11 @@ export function FilePreview({
               to navigate
             </>
           )}
+        </span>
+        {/* Mobile hint */}
+        <span className="text-white/40 text-xs sm:hidden">
+          Tap X to close
+          {(hasNext || hasPrevious) && ' · Swipe to navigate'}
         </span>
       </div>
     </div>

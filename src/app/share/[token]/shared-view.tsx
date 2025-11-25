@@ -137,18 +137,18 @@ export function SharedView({ file, share, childrenFiles = [], currentPath, token
     const renderPreview = () => {
         if (isLoadingPreview) {
              return (
-                <div className="flex flex-col items-center justify-center py-10">
-                  <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
-                  <p className="mt-4 text-muted-foreground text-sm">Loading preview...</p>
+                <div className="flex flex-col items-center justify-center py-6 sm:py-10">
+                  <Loader2 className="h-8 w-8 sm:h-10 sm:w-10 animate-spin text-muted-foreground" />
+                  <p className="mt-3 sm:mt-4 text-muted-foreground text-xs sm:text-sm">Loading preview...</p>
                 </div>
              )
         }
 
         if (previewError) {
             return (
-                <div className="flex flex-col items-center justify-center py-10">
-                    <AlertCircle className="h-10 w-10 text-red-400 mb-2" />
-                    <p className="text-red-400">{previewError}</p>
+                <div className="flex flex-col items-center justify-center py-6 sm:py-10">
+                    <AlertCircle className="h-8 w-8 sm:h-10 sm:w-10 text-red-400 mb-2" />
+                    <p className="text-red-400 text-sm text-center">{previewError}</p>
                     <Button variant="outline" size="sm" className="mt-4" onClick={loadPreview}>Retry</Button>
                 </div>
             )
@@ -159,23 +159,23 @@ export function SharedView({ file, share, childrenFiles = [], currentPath, token
         switch (fileType) {
             case 'image':
                 return (
-                    <div className="flex items-center justify-center p-4 bg-zinc-950/5 rounded-lg border border-border/50">
+                    <div className="flex items-center justify-center p-2 sm:p-4 bg-zinc-950/5 rounded-lg border border-border/50">
                         <img 
                             src={`data:image/*;base64,${previewContent}`} 
                             alt={file.name}
-                            className="max-h-[60vh] max-w-full object-contain rounded shadow-sm"
+                            className="max-h-[40vh] sm:max-h-[60vh] max-w-full object-contain rounded shadow-sm"
                         />
                     </div>
                 )
             case 'text':
                 return (
-                    <div className="p-4 bg-zinc-950/5 rounded-lg border border-border/50 overflow-auto max-h-[60vh]">
-                         <pre className="text-sm font-mono whitespace-pre-wrap break-words">{atob(previewContent)}</pre>
+                    <div className="p-2 sm:p-4 bg-zinc-950/5 rounded-lg border border-border/50 overflow-auto max-h-[40vh] sm:max-h-[60vh]">
+                         <pre className="text-xs sm:text-sm font-mono whitespace-pre-wrap break-words">{atob(previewContent)}</pre>
                     </div>
                 )
             case 'pdf':
                  return (
-                    <div className="h-[60vh] w-full">
+                    <div className="h-[40vh] sm:h-[60vh] w-full">
                         <iframe 
                             src={`data:application/pdf;base64,${previewContent}`}
                             className="w-full h-full rounded-lg border"
@@ -185,8 +185,8 @@ export function SharedView({ file, share, childrenFiles = [], currentPath, token
                  )
             case 'video':
                 return (
-                    <div className="flex items-center justify-center p-4 bg-black rounded-lg">
-                        <video controls className="max-h-[60vh] max-w-full" autoPlay>
+                    <div className="flex items-center justify-center p-2 sm:p-4 bg-black rounded-lg">
+                        <video controls className="max-h-[40vh] sm:max-h-[60vh] max-w-full" autoPlay>
                              <source src={`data:video/mp4;base64,${previewContent}`} />
                              Your browser does not support the video tag.
                         </video>
@@ -194,9 +194,9 @@ export function SharedView({ file, share, childrenFiles = [], currentPath, token
                 )
              case 'audio':
                 return (
-                    <div className="flex flex-col items-center justify-center p-10 bg-zinc-950/5 rounded-lg border border-border/50">
-                        <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                             <File className="h-10 w-10 text-primary" />
+                    <div className="flex flex-col items-center justify-center p-6 sm:p-10 bg-zinc-950/5 rounded-lg border border-border/50">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 flex items-center justify-center mb-3 sm:mb-4">
+                             <File className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
                         </div>
                         <audio controls className="w-full max-w-md">
                              <source src={`data:audio/mpeg;base64,${previewContent}`} />
@@ -210,53 +210,53 @@ export function SharedView({ file, share, childrenFiles = [], currentPath, token
     }
 
     return (
-        <div className="container mx-auto py-10 max-w-4xl">
+        <div className="container mx-auto py-4 sm:py-6 md:py-10 px-3 sm:px-4 max-w-4xl">
             <Card>
-                <CardHeader>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                        <Button variant="ghost" size="sm" className="p-0 h-auto hover:bg-transparent" onClick={() => handleNavigate("")}>
+                <CardHeader className="p-4 sm:p-6">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 overflow-x-auto">
+                        <Button variant="ghost" size="sm" className="p-0 h-auto hover:bg-transparent shrink-0" onClick={() => handleNavigate("")}>
                             <Home className="h-4 w-4" />
                         </Button>
                         {currentPath && (
                              <>
-                                <ChevronRight className="h-4 w-4" />
-                                <span>{currentPath.split('/').filter(Boolean).join(' / ')}</span>
+                                <ChevronRight className="h-4 w-4 shrink-0" />
+                                <span className="truncate">{currentPath.split('/').filter(Boolean).join(' / ')}</span>
                              </>
                         )}
                     </div>
-                    <CardTitle className="flex items-center gap-2">
-                        {file.type === 'folder' ? <Folder className="h-6 w-6 text-blue-500" /> : <File className="h-6 w-6 text-gray-500" />}
-                        {file.name}
+                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg md:text-xl">
+                        {file.type === 'folder' ? <Folder className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500 shrink-0" /> : <File className="h-5 w-5 sm:h-6 sm:w-6 text-gray-500 shrink-0" />}
+                        <span className="truncate">{file.name}</span>
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-xs sm:text-sm">
                         Shared by owner • {file.type === 'folder' ? 'Folder' : formatBytes(parseFloat(file.size))}
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
                     {isFolder ? (
                         <div className="border rounded-md divide-y">
                             {childrenFiles.length === 0 ? (
-                                <div className="p-4 text-center text-muted-foreground">Empty folder</div>
+                                <div className="p-4 text-center text-muted-foreground text-sm">Empty folder</div>
                             ) : (
                                 childrenFiles.map((child) => (
-                                    <div key={child.id} className="p-3 flex items-center justify-between hover:bg-muted/50 transition-colors">
+                                    <div key={child.id} className="p-2 sm:p-3 flex items-center justify-between hover:bg-muted/50 transition-colors gap-2">
                                         <div 
-                                            className="flex items-center gap-3 cursor-pointer flex-1"
+                                            className="flex items-center gap-2 sm:gap-3 cursor-pointer flex-1 min-w-0"
                                             onClick={() => child.type === 'folder' 
                                                 ? handleNavigate(child.path === '/' ? '/' + child.name : child.path + '/' + child.name)
                                                 : null
                                             }
                                         >
                                             {child.type === 'folder' ? 
-                                                <Folder className="h-5 w-5 text-blue-500 fill-blue-500" /> : 
-                                                <File className="h-5 w-5 text-gray-400" />
+                                                <Folder className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500 fill-blue-500 shrink-0" /> : 
+                                                <File className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 shrink-0" />
                                             }
-                                            <span className="text-sm font-medium">{child.name}</span>
+                                            <span className="text-xs sm:text-sm font-medium truncate">{child.name}</span>
                                         </div>
-                                        <div className="flex items-center gap-4">
-                                            <span className="text-xs text-muted-foreground">{child.size}</span>
+                                        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                                            <span className="text-[10px] sm:text-xs text-muted-foreground hidden xs:inline">{child.size}</span>
                                             {child.type === 'file' && (
-                                                <Button size="sm" variant="ghost" onClick={() => handleDownload(child)}>
+                                                <Button size="sm" variant="ghost" onClick={() => handleDownload(child)} className="h-8 w-8 p-0">
                                                     <Download className="h-4 w-4" />
                                                 </Button>
                                             )}
@@ -266,7 +266,7 @@ export function SharedView({ file, share, childrenFiles = [], currentPath, token
                             )}
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-6">
+                        <div className="flex flex-col gap-4 sm:gap-6">
                             {canPreview && (
                                 <div className="w-full">
                                     {renderPreview()}
@@ -274,14 +274,14 @@ export function SharedView({ file, share, childrenFiles = [], currentPath, token
                             )}
                             
                             {!canPreview && !isLoadingPreview && (
-                                <div className="flex flex-col items-center justify-center py-10 gap-4">
-                                    <File className="h-16 w-16 text-gray-300" />
-                                    <p className="text-muted-foreground">Preview not available for this file type.</p>
+                                <div className="flex flex-col items-center justify-center py-6 sm:py-10 gap-3 sm:gap-4">
+                                    <File className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300" />
+                                    <p className="text-muted-foreground text-sm sm:text-base text-center">Preview not available for this file type.</p>
                                 </div>
                             )}
 
                             <div className="flex justify-center">
-                                <Button onClick={() => handleDownload()} disabled={isDownloading} size="lg">
+                                <Button onClick={() => handleDownload()} disabled={isDownloading} size="lg" className="w-full sm:w-auto">
                                     {isDownloading ? (
                                         <>
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

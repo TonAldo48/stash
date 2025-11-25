@@ -36,28 +36,28 @@ export function StorageWidget() {
     const usedPercentage = stats ? Math.min((stats.used / maxStorage) * 100, 100) : 0;
 
     return (
-        <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-4">
+        <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-2">
                 <Cloud className="h-4 w-4 text-primary" />
-                <h4 className="text-sm font-semibold">Storage</h4>
+                <h4 className="text-xs sm:text-sm font-semibold">Storage</h4>
             </div>
             {isLoading ? (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 text-[10px] sm:text-xs text-muted-foreground">
                     <Loader2 className="h-3 w-3 animate-spin" />
                     Loading...
                 </div>
             ) : (
                 <>
-                    <div className="text-xs text-muted-foreground mb-2">
+                    <div className="text-[10px] sm:text-xs text-muted-foreground mb-2">
                         {formatBytes(stats?.used ?? 0)} used of {formatBytes(maxStorage)}
                     </div>
-                    <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                    <div className="h-1.5 sm:h-2 w-full bg-secondary rounded-full overflow-hidden">
                         <div 
                             className="h-full bg-primary transition-all duration-300" 
                             style={{ width: `${Math.max(usedPercentage, 1)}%` }} 
                         />
                     </div>
-                    <div className="mt-2 text-xs text-muted-foreground">
+                    <div className="mt-2 text-[10px] sm:text-xs text-muted-foreground">
                         {stats?.fileCount ?? 0} files · {stats?.folderCount ?? 0} folders
                     </div>
                 </>

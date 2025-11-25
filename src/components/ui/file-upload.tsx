@@ -79,14 +79,14 @@ export default function FileUpload({ onUploadComplete, currentPath = "/" }: { on
   }
 
   return (
-    <div className="w-full p-4">
+    <div className="w-full p-3 sm:p-4">
       <div className="w-full">
-        <h3 className="text-lg font-semibold text-foreground mb-3">Upload Files</h3>
+        <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2 sm:mb-3">Upload Files</h3>
         
         {/* Drop Zone / Input */}
         <Label
           htmlFor="file-upload"
-          className="flex justify-center rounded-md border-2 border-dashed border-input px-4 py-8 transition-colors hover:bg-accent/50 cursor-pointer"
+          className="flex justify-center rounded-md border-2 border-dashed border-input px-3 sm:px-4 py-6 sm:py-8 transition-colors hover:bg-accent/50 cursor-pointer"
         >
           <input
             id="file-upload"
@@ -98,12 +98,12 @@ export default function FileUpload({ onUploadComplete, currentPath = "/" }: { on
             disabled={isUploading}
           />
           <div className="text-center">
-            <Upload className="mx-auto h-10 w-10 text-muted-foreground" />
-            <div className="mt-2 flex text-sm leading-6 text-muted-foreground justify-center">
+            <Upload className="mx-auto h-8 w-8 sm:h-10 sm:w-10 text-muted-foreground" />
+            <div className="mt-2 flex flex-wrap text-xs sm:text-sm leading-6 text-muted-foreground justify-center">
               <span className="font-medium text-primary hover:underline hover:text-primary/90">Choose files</span>
               <p className="pl-1">or drag and drop</p>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
               Max file size: 10MB per file
             </p>
           </div>
@@ -111,26 +111,26 @@ export default function FileUpload({ onUploadComplete, currentPath = "/" }: { on
 
         {/* File Chips / List */}
         {files.length > 0 && (
-            <div className="mt-4 space-y-3 max-h-[300px] overflow-y-auto pr-2">
-                <p className="text-sm font-medium text-muted-foreground mb-2">Selected Files ({files.length})</p>
+            <div className="mt-3 sm:mt-4 space-y-2 sm:space-y-3 max-h-[200px] sm:max-h-[300px] overflow-y-auto pr-1 sm:pr-2">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-2">Selected Files ({files.length})</p>
                 {files.map((fileStatus, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-secondary/40 rounded-md border text-sm group">
-                        <div className="flex items-center gap-3 overflow-hidden">
+                    <div key={index} className="flex items-center justify-between p-2 sm:p-3 bg-secondary/40 rounded-md border text-xs sm:text-sm group">
+                        <div className="flex items-center gap-2 sm:gap-3 overflow-hidden flex-1 min-w-0">
                             {fileStatus.status === 'uploading' ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                                <Loader2 className="h-4 w-4 animate-spin text-blue-500 shrink-0" />
                             ) : fileStatus.status === 'success' ? (
-                                <CheckCircle className="h-4 w-4 text-green-500" />
+                                <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
                             ) : fileStatus.status === 'error' ? (
-                                <AlertCircle className="h-4 w-4 text-red-500" />
+                                <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
                             ) : (
-                                <FileIcon className="h-4 w-4 text-muted-foreground" />
+                                <FileIcon className="h-4 w-4 text-muted-foreground shrink-0" />
                             )}
                             
                             <div className="flex flex-col min-w-0">
-                                <span className="truncate font-medium">{fileStatus.file.name}</span>
-                                <span className="text-xs text-muted-foreground">
+                                <span className="truncate font-medium text-xs sm:text-sm">{fileStatus.file.name}</span>
+                                <span className="text-[10px] sm:text-xs text-muted-foreground">
                                     {formatBytes(fileStatus.file.size)} 
-                                    {fileStatus.errorMessage && <span className="text-red-500 ml-2">• {fileStatus.errorMessage}</span>}
+                                    {fileStatus.errorMessage && <span className="text-red-500 ml-1 sm:ml-2">• {fileStatus.errorMessage}</span>}
                                 </span>
                             </div>
                         </div>
@@ -139,7 +139,7 @@ export default function FileUpload({ onUploadComplete, currentPath = "/" }: { on
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="h-6 w-6 text-muted-foreground hover:text-red-500 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0"
                             onClick={() => removeFile(index)}
                             disabled={fileStatus.status === 'uploading' || fileStatus.status === 'success'}
                         >
@@ -152,12 +152,13 @@ export default function FileUpload({ onUploadComplete, currentPath = "/" }: { on
         )}
 
         {/* Actions */}
-        <div className="mt-4 flex items-center justify-end space-x-3">
+        <div className="mt-3 sm:mt-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:space-x-3">
           <Button
             type="button"
             variant="outline"
             onClick={() => setFiles([])}
             disabled={isUploading || files.length === 0}
+            className="w-full sm:w-auto text-sm"
           >
             Clear All
           </Button>
@@ -165,7 +166,7 @@ export default function FileUpload({ onUploadComplete, currentPath = "/" }: { on
             type="button"
             onClick={handleUpload}
             disabled={isUploading || files.length === 0 || files.every(f => f.status === 'success')}
-            className="min-w-[100px]"
+            className="w-full sm:w-auto sm:min-w-[100px] text-sm"
           >
             {isUploading ? (
                 <>
