@@ -108,7 +108,9 @@ export async function uploadFile(formData: FormData) {
 
     // 3. Upload Blob to GitHub
     const buffer = Buffer.from(await file.arrayBuffer());
-    const blobName = `blobs/${Date.now()}-${file.name}`;
+    // Sanitize filename to prevent directory traversal or confusion
+    const sanitizedName = file.name.replace(/[\/\\]/g, '_');
+    const blobName = `blobs/${Date.now()}-${sanitizedName}`;
     
     await github.uploadFile(
         activeRepoData.repo_name, 

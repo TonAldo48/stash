@@ -4,6 +4,8 @@ import { updateSession } from '@/lib/supabase/middleware'
 export async function middleware(request: NextRequest) {
   // Skip middleware for POST requests (Server Actions) to avoid body size limits
   // Auth is still checked inside the Server Action itself.
+  // SECURITY WARNING: This bypasses middleware auth checks for ALL POST requests.
+  // Ensure that any new POST route handlers (e.g. app/api/...) manually verify authentication.
   if (request.method === 'POST') {
     return NextResponse.next();
   }

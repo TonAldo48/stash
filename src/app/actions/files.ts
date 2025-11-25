@@ -59,6 +59,11 @@ export async function createFolder(name: string, path: string = "/") {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return { error: "Unauthorized" };
 
+    // Validate folder name
+    if (!name || name.includes('/') || name.includes('\\') || name === '.' || name === '..') {
+        return { error: "Invalid folder name" };
+    }
+
     try {
         const { data, error } = await supabase
             .from('files')
