@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,7 +47,11 @@ export function UserNav({ email, avatarUrl }: UserNavProps) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>Settings</DropdownMenuItem>
+        <Link href="/dashboard/settings">
+          <DropdownMenuItem className="cursor-pointer">
+            Settings
+          </DropdownMenuItem>
+        </Link>
         <DropdownMenuItem>Support</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem

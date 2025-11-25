@@ -78,7 +78,7 @@ export function SearchBar() {
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                     ref={inputRef}
-                    type="search"
+                    type="text"
                     placeholder="Search files..."
                     className="w-full appearance-none bg-background pl-8 pr-8 shadow-none"
                     value={query}

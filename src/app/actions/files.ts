@@ -2,8 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { GitHubService } from "@/lib/github";
-
-const ROOT_REPO = "gitdrive-root";
+import { formatBytes } from "@/lib/utils";
 
 export interface FileItem {
   id: string;
@@ -16,50 +15,39 @@ export interface FileItem {
   sha?: string;
 }
 
-interface Metadata {
-  files: FileItem[];
-  folders: FileItem[];
-  system?: {
-    active_repo: string;
-    repos: string[];
-  }
-}
-
-async function getMetadata(github: GitHubService): Promise<Metadata> {
-    const file = await github.getFile(ROOT_REPO, "metadata.json");
-    if (!file) return { files: [], folders: [], system: { active_repo: "gitdrive-storage-001", repos: ["gitdrive-storage-001"] } };
-    return JSON.parse(file.content);
-}
-
-async function saveMetadata(github: GitHubService, metadata: Metadata, message: string) {
-    await github.uploadFile(
-        ROOT_REPO,
-        "metadata.json",
-        JSON.stringify(metadata, null, 2),
-        message
-    );
-}
-
 export async function listFiles(path: string = "/") {
   const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session?.provider_token) {
-    return { error: "Unauthorized" };
+  
+  // RLS will handle user filtering, but we need to be authenticated
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+      return { error: "Unauthorized" };
   }
 
-  const github = new GitHubService(session.provider_token);
-
   try {
-    const metadata = await getMetadata(github);
     const currentPath = path === "/" ? "/" : path;
 
-    const files = metadata.files.filter(f => f.path === currentPath);
-    const folders = metadata.folders.filter(f => f.path === currentPath);
+    const { data: dbFiles, error } = await supabase
+        .from('files')
+        .select('*')
+        .eq('path', currentPath)
+        .order('type', { ascending: false }) // Folders first
+        .order('name', { ascending: true });
 
-    return { files: [...folders, ...files] };
+    if (error) throw error;
+
+    const files: FileItem[] = dbFiles.map((f: any) => ({
+        id: f.id,
+        name: f.name,
+        type: f.type,
+        size: f.type === 'folder' ? '-' : formatBytes(f.size_bytes || 0),
+        modified: f.created_at,
+        path: f.path,
+        repo: f.repo_name,
+        sha: f.blob_path // using blob_path as sha/ref
+    }));
+
+    return { files };
   } catch (error: any) {
     console.error("List files error:", error);
     return { error: error.message };
@@ -68,25 +56,32 @@ export async function listFiles(path: string = "/") {
 
 export async function createFolder(name: string, path: string = "/") {
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.provider_token) return { error: "Unauthorized" };
-
-    const github = new GitHubService(session.provider_token);
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return { error: "Unauthorized" };
 
     try {
-        const metadata = await getMetadata(github);
-        
+        const { data, error } = await supabase
+            .from('files')
+            .insert({
+                user_id: user.id,
+                name,
+                type: 'folder',
+                path,
+                size_bytes: 0
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+
         const newFolder: FileItem = {
-            id: crypto.randomUUID(),
-            name,
+            id: data.id,
+            name: data.name,
             type: "folder",
             size: "-",
-            modified: new Date().toISOString(),
-            path
+            modified: data.created_at,
+            path: data.path
         };
-
-        metadata.folders.push(newFolder);
-        await saveMetadata(github, metadata, `Create folder ${name}`);
         
         return { success: true, folder: newFolder };
     } catch (error: any) {
@@ -96,21 +91,17 @@ export async function createFolder(name: string, path: string = "/") {
 
 export async function deleteItem(id: string, type: "file" | "folder") {
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.provider_token) return { error: "Unauthorized" };
-
-    const github = new GitHubService(session.provider_token);
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return { error: "Unauthorized" };
 
     try {
-        const metadata = await getMetadata(github);
+        const { error } = await supabase
+            .from('files')
+            .delete()
+            .eq('id', id);
 
-        if (type === "file") {
-            metadata.files = metadata.files.filter(f => f.id !== id);
-        } else {
-            metadata.folders = metadata.folders.filter(f => f.id !== id);
-        }
+        if (error) throw error;
 
-        await saveMetadata(github, metadata, `Delete ${type} ${id}`);
         return { success: true };
     } catch (error: any) {
         return { error: error.message };
@@ -125,19 +116,22 @@ export async function downloadFile(fileId: string) {
     const github = new GitHubService(session.provider_token);
 
     try {
-        const metadata = await getMetadata(github);
-        const file = metadata.files.find(f => f.id === fileId);
-        
-        if (!file) {
+        const { data: file, error } = await supabase
+            .from('files')
+            .select('*')
+            .eq('id', fileId)
+            .single();
+
+        if (error || !file) {
             return { error: "File not found" };
         }
 
-        if (!file.repo || !file.sha) {
+        if (!file.repo_name || !file.blob_path) {
             return { error: "File metadata incomplete" };
         }
 
         // Get the file content from the storage repo
-        const fileData = await github.getFileRaw(file.repo, file.sha);
+        const fileData = await github.getFileRaw(file.repo_name, file.blob_path);
         
         if (!fileData) {
             return { error: "File not found in storage" };
@@ -147,7 +141,7 @@ export async function downloadFile(fileId: string) {
             success: true, 
             content: fileData.content.toString("base64"),
             name: file.name,
-            size: file.size
+            size: formatBytes(file.size_bytes)
         };
     } catch (error: any) {
         return { error: error.message };
@@ -156,43 +150,41 @@ export async function downloadFile(fileId: string) {
 
 export async function getStorageStats() {
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.provider_token) return { error: "Unauthorized" };
-
-    const github = new GitHubService(session.provider_token);
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return { error: "Unauthorized" };
 
     try {
-        const metadata = await getMetadata(github);
-        
-        // Calculate total size from file metadata
-        let totalBytes = 0;
-        for (const file of metadata.files) {
-            const sizeStr = file.size;
-            if (sizeStr && sizeStr !== "-") {
-                const match = sizeStr.match(/^([\d.]+)\s*(B|KB|MB|GB)$/i);
-                if (match) {
-                    const value = parseFloat(match[1]);
-                    const unit = match[2].toUpperCase();
-                    const multipliers: Record<string, number> = { 
-                        'B': 1, 
-                        'KB': 1024, 
-                        'MB': 1024 * 1024, 
-                        'GB': 1024 * 1024 * 1024 
-                    };
-                    totalBytes += value * (multipliers[unit] || 1);
-                }
-            }
+        // Get storage usage from tracked table
+        const { data: usage, error: usageError } = await supabase
+            .from('user_storage_usage')
+            .select('total_bytes, file_count, folder_count')
+            .eq('user_id', user.id)
+            .single();
+            
+        // It's possible the row doesn't exist yet if no files created, handle gracefully
+        const totalBytes = usage?.total_bytes || 0;
+        const fileCount = usage?.file_count || 0;
+        const folderCount = usage?.folder_count || 0;
+
+        if (usageError && usageError.code !== 'PGRST116') { // PGRST116 is "The result contains 0 rows"
+             // If usage row missing but files exist (race condition or failed trigger), 
+             // we could fallback to count or just return 0. Returning 0 is safe for MVP.
+             if (usageError.code !== 'PGRST116') throw usageError;
         }
 
-        // Get the list of storage repos
-        const repos = metadata.system?.repos || ["gitdrive-storage-001"];
+        // Get repo count
+        const { count: repoCount, error: repoError } = await supabase
+            .from('storage_repos')
+            .select('*', { count: 'exact', head: true });
+
+        if (repoError) throw repoError;
         
         return { 
             success: true,
             used: totalBytes,
-            fileCount: metadata.files.length,
-            folderCount: metadata.folders.length,
-            repos: repos.length
+            fileCount,
+            folderCount,
+            repos: repoCount || 0
         };
     } catch (error: any) {
         return { error: error.message };
@@ -201,23 +193,31 @@ export async function getStorageStats() {
 
 export async function searchFiles(query: string) {
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.provider_token) return { error: "Unauthorized" };
-
-    const github = new GitHubService(session.provider_token);
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return { error: "Unauthorized" };
 
     try {
-        const metadata = await getMetadata(github);
-        const lowerQuery = query.toLowerCase();
+        const formattedQuery = query.trim().split(/\s+/).map(w => `${w}:*`).join(' & ');
         
-        const matchingFiles = metadata.files.filter(f => 
-            f.name.toLowerCase().includes(lowerQuery)
-        );
-        const matchingFolders = metadata.folders.filter(f => 
-            f.name.toLowerCase().includes(lowerQuery)
-        );
+        const { data: dbFiles, error } = await supabase
+            .from('files')
+            .select('*')
+            .textSearch('name_search', formattedQuery);
 
-        return { files: [...matchingFolders, ...matchingFiles] };
+        if (error) throw error;
+
+        const files: FileItem[] = dbFiles.map((f: any) => ({
+            id: f.id,
+            name: f.name,
+            type: f.type,
+            size: f.type === 'folder' ? '-' : formatBytes(f.size_bytes || 0),
+            modified: f.created_at,
+            path: f.path,
+            repo: f.repo_name,
+            sha: f.blob_path
+        }));
+
+        return { files };
     } catch (error: any) {
         return { error: error.message };
     }

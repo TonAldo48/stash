@@ -9,8 +9,10 @@ import {
   MoreHorizontal,
   Plus,
   Download,
+  Share,
   Trash,
-  Loader2
+  Loader2,
+  Eye
 } from "lucide-react"
 import { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
@@ -46,12 +48,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import FileUpload from "@/components/ui/file-upload"
 import { ConfirmDialog } from "@/components/confirm-dialog"
+import { FilePreview } from "@/components/file-preview"
+import { ShareDialog } from "@/components/share-dialog"
 
-import { listFiles, createFolder, deleteItem, downloadFile } from "@/app/actions/files";
+import { listFiles, createFolder, deleteItem, downloadFile, FileItem } from "@/app/actions/files";
 
 export default function DashboardPage() {
   const [view, setView] = useState<"list" | "grid">("list")
-  const [files, setFiles] = useState<any[]>([])
+  const [files, setFiles] = useState<FileItem[]>([])
   const [currentPath, setCurrentPath] = useState("/")
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false)
   const [isUploadOpen, setIsUploadOpen] = useState(false)
@@ -62,6 +66,27 @@ export default function DashboardPage() {
   const [isCreatingFolder, setIsCreatingFolder] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<{ id: string, type: "file" | "folder" } | null>(null)
+  const [previewFile, setPreviewFile] = useState<FileItem | null>(null)
+  const [shareFile, setShareFile] = useState<FileItem | null>(null)
+  
+  // Get only files (not folders) for navigation
+  const previewableFiles = files.filter(f => f.type === "file")
+  
+  const handlePreviewNext = () => {
+    if (!previewFile) return
+    const currentIndex = previewableFiles.findIndex(f => f.id === previewFile.id)
+    if (currentIndex < previewableFiles.length - 1) {
+      setPreviewFile(previewableFiles[currentIndex + 1])
+    }
+  }
+
+  const handlePreviewPrevious = () => {
+    if (!previewFile) return
+    const currentIndex = previewableFiles.findIndex(f => f.id === previewFile.id)
+    if (currentIndex > 0) {
+      setPreviewFile(previewableFiles[currentIndex - 1])
+    }
+  }
   
   const fetchFiles = useCallback(async () => {
     setIsLoading(true)
@@ -234,7 +259,7 @@ export default function DashboardPage() {
                 </span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-xl p-0 border-none bg-transparent shadow-none">
+            <DialogContent className="sm:max-w-lg p-0 border-none bg-transparent shadow-none">
               <DialogTitle className="sr-only">Upload File</DialogTitle>
               <Card className="w-full">
                  <FileUpload 
@@ -312,10 +337,18 @@ export default function DashboardPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         {file.type === "file" && (
-                          <DropdownMenuItem onClick={() => handleDownload(file.id, file.name)}>
-                              <Download className="mr-2 h-4 w-4" /> Download
-                          </DropdownMenuItem>
+                          <>
+                            <DropdownMenuItem onClick={() => setPreviewFile(file)}>
+                                <Eye className="mr-2 h-4 w-4" /> Preview
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownload(file.id, file.name)}>
+                                <Download className="mr-2 h-4 w-4" /> Download
+                            </DropdownMenuItem>
+                          </>
                         )}
+                        <DropdownMenuItem onClick={() => setShareFile(file)}>
+                            <Share className="mr-2 h-4 w-4" /> Share
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteClick(file.id, file.type)}>
                              <Trash className="mr-2 h-4 w-4" /> Delete
@@ -360,10 +393,18 @@ export default function DashboardPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                          {file.type === "file" && (
-                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDownload(file.id, file.name); }}>
-                             <Download className="mr-2 h-4 w-4" /> Download
-                           </DropdownMenuItem>
+                           <>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setPreviewFile(file); }}>
+                               <Eye className="mr-2 h-4 w-4" /> Preview
+                             </DropdownMenuItem>
+                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDownload(file.id, file.name); }}>
+                               <Download className="mr-2 h-4 w-4" /> Download
+                             </DropdownMenuItem>
+                           </>
                          )}
+                         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setShareFile(file); }}>
+                           <Share className="mr-2 h-4 w-4" /> Share
+                         </DropdownMenuItem>
                          <DropdownMenuItem className="text-red-600" onClick={(e) => { e.stopPropagation(); handleDeleteClick(file.id, file.type); }}>
                            <Trash className="mr-2 h-4 w-4" /> Delete
                          </DropdownMenuItem>
@@ -391,6 +432,22 @@ export default function DashboardPage() {
         title="Are you sure?"
         description="This action cannot be undone. This will permanently delete the item."
         onConfirm={confirmDelete}
+      />
+
+      <FilePreview 
+        file={previewFile}
+        isOpen={!!previewFile}
+        onClose={() => setPreviewFile(null)}
+        onNext={handlePreviewNext}
+        onPrevious={handlePreviewPrevious}
+        hasNext={previewFile ? previewableFiles.findIndex(f => f.id === previewFile.id) < previewableFiles.length - 1 : false}
+        hasPrevious={previewFile ? previewableFiles.findIndex(f => f.id === previewFile.id) > 0 : false}
+      />
+
+      <ShareDialog 
+        file={shareFile}
+        isOpen={!!shareFile}
+        onClose={() => setShareFile(null)}
       />
     </div>
   )

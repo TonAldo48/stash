@@ -19,16 +19,10 @@ export default async function SettingsPage() {
         </p>
       </div>
       <Separator />
-      <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0">
-        <aside className="-mx-4 lg:mx-0 lg:w-1/5">
-          <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1 px-4 lg:px-0">
-            <Button variant="secondary" className="w-full justify-start font-semibold">Profile</Button>
-          </nav>
-        </aside>
-        <div className="flex-1 lg:max-w-2xl">
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-medium">Profile</h3>
+      <div className="lg:max-w-2xl mx-auto">
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-lg font-medium">Profile</h3>
               <p className="text-sm text-muted-foreground">
                 Your profile information from GitHub.
               </p>
@@ -63,7 +57,6 @@ export default async function SettingsPage() {
             </form>
           </div>
         </div>
-      </div>
     </div>
   )
 }

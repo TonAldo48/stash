@@ -1,7 +1,13 @@
-import { type NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
+  // Skip middleware for POST requests (Server Actions) to avoid body size limits
+  // Auth is still checked inside the Server Action itself.
+  if (request.method === 'POST') {
+    return NextResponse.next();
+  }
+  
   return await updateSession(request)
 }
 
@@ -17,4 +23,3 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
-

@@ -3,8 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { GitHubService } from "@/lib/github";
 import { FileItem } from "./files";
+import { formatBytes } from "@/lib/utils";
 
-const ROOT_REPO = "gitdrive-root";
 const STORAGE_REPO_PREFIX = "gitdrive-storage";
 const MAX_REPO_SIZE = 4 * 1024 * 1024 * 1024; // 4GB threshold before creating new repo
 
@@ -21,95 +21,140 @@ export async function uploadFile(formData: FormData) {
 
   const supabase = await createClient();
   const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const {
     data: { session },
   } = await supabase.auth.getSession();
 
-  if (!session?.provider_token) {
+  if (!session?.provider_token || !user) {
     return { error: "Unauthorized" };
   }
 
   const github = new GitHubService(session.provider_token);
 
   try {
-    // Lock/Read/Write pattern (Optimistic locking skipped for MVP)
-    const metaFile = await github.getFile(ROOT_REPO, "metadata.json");
-    if (!metaFile) throw new Error("Metadata not found");
+    // 1. Find active storage repo
+    let { data: activeRepoData, error: repoError } = await supabase
+        .from('storage_repos')
+        .select('*')
+        .eq('is_active', true)
+        .single();
 
-    const metadata = JSON.parse(metaFile.content);
-    
-    // Initialize system metadata if not present
-    if (!metadata.system) {
-      metadata.system = {
-        active_repo: `${STORAGE_REPO_PREFIX}-001`,
-        repos: [`${STORAGE_REPO_PREFIX}-001`]
-      };
+    // If no active repo found (first time or error), handle initialization
+    if (!activeRepoData) {
+        // Check if any repos exist to determine name
+        const { count } = await supabase
+            .from('storage_repos')
+            .select('*', { count: 'exact', head: true });
+        
+        const repoIndex = (count || 0) + 1;
+        const newRepoName = `${STORAGE_REPO_PREFIX}-${String(repoIndex).padStart(3, '0')}`;
+        
+        // Create in GitHub
+        await github.createRepo(newRepoName);
+        
+        // Create in DB
+        const { data: newRepo, error: createError } = await supabase
+            .from('storage_repos')
+            .insert({
+                user_id: user.id,
+                repo_name: newRepoName,
+                is_active: true,
+                size_bytes: 0
+            })
+            .select()
+            .single();
+            
+        if (createError) throw createError;
+        activeRepoData = newRepo;
     }
-    
-    // Check if we need to create a new storage repo
-    let activeRepo = metadata.system.active_repo;
-    const repoSize = await github.getRepoSize(activeRepo);
-    
-    if (repoSize > MAX_REPO_SIZE) {
-      // Create a new storage repo
-      const repoCount = metadata.system.repos.length + 1;
-      const newRepoName = `${STORAGE_REPO_PREFIX}-${String(repoCount).padStart(3, '0')}`;
-      
-      await github.createRepo(newRepoName);
-      
-      metadata.system.repos.push(newRepoName);
-      metadata.system.active_repo = newRepoName;
-      activeRepo = newRepoName;
+
+    // 2. Check size limits (lazy check using GitHub API to be sure, or trust DB)
+    // Trusting DB for speed, but could verify occasionally.
+    // Let's check DB size + incoming file size
+    if ((activeRepoData.size_bytes + file.size) > MAX_REPO_SIZE) {
+        // Rotate repo
+        // Deactivate current
+        await supabase
+            .from('storage_repos')
+            .update({ is_active: false })
+            .eq('id', activeRepoData.id);
+
+        // Create new
+        const { count } = await supabase
+            .from('storage_repos')
+            .select('*', { count: 'exact', head: true });
+
+        const repoIndex = (count || 0) + 1;
+        const newRepoName = `${STORAGE_REPO_PREFIX}-${String(repoIndex).padStart(3, '0')}`;
+        
+        await github.createRepo(newRepoName);
+        
+        const { data: newRepo, error: createError } = await supabase
+            .from('storage_repos')
+            .insert({
+                user_id: user.id,
+                repo_name: newRepoName,
+                is_active: true,
+                size_bytes: 0
+            })
+            .select()
+            .single();
+
+        if (createError) throw createError;
+        activeRepoData = newRepo;
     }
 
-    // 1. Ensure storage repo exists
-    await github.createRepo(activeRepo);
-
-    // 2. Upload Blob
+    // 3. Upload Blob to GitHub
     const buffer = Buffer.from(await file.arrayBuffer());
-    // Use a unique name to avoid collision
     const blobName = `blobs/${Date.now()}-${file.name}`;
     
     await github.uploadFile(
-        activeRepo, 
+        activeRepoData.repo_name, 
         blobName, 
         buffer, 
         `Upload ${file.name}`
     );
     
-    const newFile: FileItem = {
-        id: crypto.randomUUID(),
-        name: file.name,
+    // 4. Insert into Files table
+    const { data: newFile, error: fileError } = await supabase
+        .from('files')
+        .insert({
+            user_id: user.id,
+            name: file.name,
+            type: 'file',
+            size_bytes: file.size,
+            path: path,
+            repo_name: activeRepoData.repo_name,
+            blob_path: blobName
+        })
+        .select()
+        .single();
+
+    if (fileError) throw fileError;
+
+    // 5. Update repo size
+    await supabase
+        .from('storage_repos')
+        .update({ size_bytes: activeRepoData.size_bytes + file.size })
+        .eq('id', activeRepoData.id);
+
+    const fileItem: FileItem = {
+        id: newFile.id,
+        name: newFile.name,
         type: "file",
-        size: formatBytes(file.size),
-        modified: new Date().toISOString(),
-        path: path,
-        repo: activeRepo,
-        sha: blobName // Storing the path in the repo as the reference
+        size: formatBytes(newFile.size_bytes),
+        modified: newFile.created_at,
+        path: newFile.path,
+        repo: newFile.repo_name,
+        sha: newFile.blob_path
     };
 
-    metadata.files.push(newFile);
-
-    await github.uploadFile(
-        ROOT_REPO,
-        "metadata.json",
-        JSON.stringify(metadata, null, 2),
-        `Add file ${file.name}`
-    );
-
-    return { success: true, file: newFile };
+    return { success: true, file: fileItem };
 
   } catch (error: any) {
     console.error("Upload error:", error);
     return { error: error.message };
   }
 }
-
-function formatBytes(bytes: number, decimals = 2) {
-    if (!+bytes) return '0 Bytes'
-    const k = 1024
-    const dm = decimals < 0 ? 0 : decimals
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
-}
-
