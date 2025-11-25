@@ -9,10 +9,13 @@ import { ModeToggle } from "@/components/mode-toggle"
 export default function LoginPage() {
   const handleLogin = async () => {
     const supabase = createClient()
+    
+    // Use window.location.origin to ensure the callback URL matches the current domain
+    // This works for both localhost and deployed environments
     await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {
-        redirectTo: `${location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback`,
         scopes: 'repo', // Request access to private repositories
       },
     })
