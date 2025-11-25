@@ -25,8 +25,17 @@ export async function uploadFile(formData: FormData) {
   const github = new GitHubService(session.provider_token);
 
   try {
+    // Lock/Read/Write pattern (Optimistic locking skipped for MVP)
+    const metaFile = await github.getFile(ROOT_REPO, "metadata.json");
+    if (!metaFile) throw new Error("Metadata not found");
+
+    const metadata = JSON.parse(metaFile.content);
+    
+    // Determine active repo
+    const activeRepo = metadata.system?.active_repo || "gitdrive-storage-001";
+
     // 1. Ensure storage repo exists
-    await github.createRepo(STORAGE_REPO_PREFIX);
+    await github.createRepo(activeRepo);
 
     // 2. Upload Blob
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -35,18 +44,11 @@ export async function uploadFile(formData: FormData) {
     const blobName = `blobs/${Date.now()}-${file.name}`;
     
     await github.uploadFile(
-        STORAGE_REPO_PREFIX, 
+        activeRepo, 
         blobName, 
         buffer, 
         `Upload ${file.name}`
     );
-
-    // 3. Update Metadata
-    // Lock/Read/Write pattern (Optimistic locking skipped for MVP)
-    const metaFile = await github.getFile(ROOT_REPO, "metadata.json");
-    if (!metaFile) throw new Error("Metadata not found");
-
-    const metadata = JSON.parse(metaFile.content);
     
     const newFile: FileItem = {
         id: crypto.randomUUID(),
@@ -55,7 +57,7 @@ export async function uploadFile(formData: FormData) {
         size: formatBytes(file.size),
         modified: new Date().toISOString(), // Git doesn't give us this easily, use upload time
         path: path,
-        repo: STORAGE_REPO_PREFIX,
+        repo: activeRepo,
         sha: blobName // Storing the path in the repo as the reference
     };
 

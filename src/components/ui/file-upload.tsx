@@ -4,7 +4,7 @@ import { FileSpreadsheet, Upload, X } from "lucide-react";
 import { useState } from "react";
 import { uploadFile } from "@/app/actions/upload";
 
-export default function FileUpload05() {
+export default function FileUpload({ onUploadComplete, currentPath = "/" }: { onUploadComplete?: () => void, currentPath?: string }) {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -12,8 +12,8 @@ export default function FileUpload05() {
     if (!selectedFile) return;
     setIsUploading(true);
     
-    // Append the file to formData if not already handled by the form submission
-    // formData passed here comes from the form action
+    // Append the current path to formData
+    formData.append("path", currentPath);
     
     const res = await uploadFile(formData);
     setIsUploading(false);
@@ -23,7 +23,7 @@ export default function FileUpload05() {
     } else {
         alert("Upload complete!");
         setSelectedFile(null);
-        // Typically you'd refresh the file list here
+        onUploadComplete?.();
     }
   }
 

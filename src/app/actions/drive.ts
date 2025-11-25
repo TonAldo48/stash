@@ -27,6 +27,10 @@ export async function initializeDrive() {
       const initialMetadata = {
         files: [],
         folders: [],
+        system: {
+            active_repo: "gitdrive-storage-001",
+            repos: ["gitdrive-storage-001"]
+        },
         version: 1,
       };
       await github.uploadFile(
