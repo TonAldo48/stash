@@ -27,7 +27,7 @@ export default async function DashboardLayout({
 
   if (!isInitialized) {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-muted/40">
+        <div className="min-h-screen flex items-center justify-center bg-muted/40 px-4">
             <DriveOnboarding />
         </div>
     )
@@ -69,7 +69,7 @@ export default async function DashboardLayout({
         </div>
       </div>
       <div className="flex flex-col">
-        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+        <header className="flex h-14 items-center gap-2 sm:gap-4 border-b bg-muted/40 px-3 sm:px-4 lg:h-[60px] lg:px-6">
           <Sheet>
             <SheetTrigger asChild>
               <Button
@@ -81,39 +81,41 @@ export default async function DashboardLayout({
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col">
-              <nav className="grid gap-2 text-lg font-medium">
-                <Link
-                  href="/"
-                  className="flex items-center gap-2 text-lg font-semibold"
-                >
+            <SheetContent side="left" className="flex flex-col p-0">
+              <div className="flex h-14 items-center border-b px-4">
+                <Link href="/" className="flex items-center gap-2 font-semibold">
                   <Package2 className="h-6 w-6" />
                   <span>Stash</span>
                 </Link>
+              </div>
+              <nav className="grid gap-1 p-4 text-base font-medium">
                 <Link
                   href="/dashboard"
-                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-primary bg-muted transition-all"
                 >
                   <Home className="h-5 w-5" />
                   My Drive
                 </Link>
                 <Link
                   href="/dashboard/settings"
-                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
                 >
                   <Settings className="h-5 w-5" />
                   Settings
                 </Link>
               </nav>
+              <div className="mt-auto p-4 border-t">
+                <StorageWidget />
+              </div>
             </SheetContent>
           </Sheet>
-          <div className="w-full flex-1">
+          <div className="w-full flex-1 min-w-0">
             <SearchBar />
           </div>
           <ModeToggle />
           <UserNav email={user?.email} avatarUrl={user?.user_metadata?.avatar_url} />
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+        <main className="flex flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:gap-6 lg:p-6">
           {children}
         </main>
       </div>

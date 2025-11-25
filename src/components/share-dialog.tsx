@@ -79,10 +79,10 @@ export function ShareDialog({ file, isOpen, onClose }: ShareDialogProps) {
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md max-w-[calc(100%-2rem)]">
                 <DialogHeader>
-                    <DialogTitle>Share "{file?.name}"</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-base sm:text-lg truncate pr-6">Share &quot;{file?.name}&quot;</DialogTitle>
+                    <DialogDescription className="text-xs sm:text-sm">
                         Manage access to this {file?.type}.
                     </DialogDescription>
                 </DialogHeader>
@@ -92,15 +92,15 @@ export function ShareDialog({ file, isOpen, onClose }: ShareDialogProps) {
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     </div>
                 ) : (
-                    <div className="grid gap-6 py-4">
-                        <div className="flex items-center justify-between space-x-2 rounded-md border p-4">
-                            <div className="flex items-center space-x-4">
-                                {isPublic ? <Globe className="h-5 w-5 text-blue-500" /> : <Lock className="h-5 w-5 text-muted-foreground" />}
-                                <div className="flex-1 space-y-1">
-                                    <p className="text-sm font-medium leading-none">
+                    <div className="grid gap-4 sm:gap-6 py-2 sm:py-4">
+                        <div className="flex items-center justify-between gap-2 sm:space-x-2 rounded-md border p-3 sm:p-4">
+                            <div className="flex items-center gap-2 sm:space-x-4 min-w-0">
+                                {isPublic ? <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500 shrink-0" /> : <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground shrink-0" />}
+                                <div className="flex-1 space-y-0.5 sm:space-y-1 min-w-0">
+                                    <p className="text-xs sm:text-sm font-medium leading-none">
                                         Public Access
                                     </p>
-                                    <p className="text-sm text-muted-foreground">
+                                    <p className="text-[10px] sm:text-sm text-muted-foreground">
                                         {isPublic ? "Anyone with the link can view" : "Only invited people can view"}
                                     </p>
                                 </div>
@@ -109,12 +109,12 @@ export function ShareDialog({ file, isOpen, onClose }: ShareDialogProps) {
                                 type="checkbox"
                                 checked={isPublic}
                                 onChange={(e) => setIsPublic(e.target.checked)}
-                                className="h-4 w-4 rounded border-gray-300"
+                                className="h-4 w-4 rounded border-gray-300 shrink-0"
                             />
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="emails" className="flex items-center gap-2">
+                            <Label htmlFor="emails" className="flex items-center gap-2 text-xs sm:text-sm">
                                 <Mail className="h-4 w-4" /> Invited People
                             </Label>
                             <Input
@@ -122,25 +122,26 @@ export function ShareDialog({ file, isOpen, onClose }: ShareDialogProps) {
                                 placeholder="email@example.com, another@example.com"
                                 value={emails}
                                 onChange={(e) => setEmails(e.target.value)}
-                                disabled={false} // Always allow inviting, even if public? Yes.
+                                disabled={false}
+                                className="text-sm"
                             />
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">
                                 Separate multiple emails with commas.
                             </p>
                         </div>
 
                         {shareLink && (
                             <div className="grid gap-2">
-                                <Label className="flex items-center gap-2">
+                                <Label className="flex items-center gap-2 text-xs sm:text-sm">
                                     <LinkIcon className="h-4 w-4" /> Share Link
                                 </Label>
-                                <div className="flex items-center space-x-2">
+                                <div className="flex items-center gap-2">
                                     <Input
                                         readOnly
                                         value={shareLink}
-                                        className="flex-1 bg-muted"
+                                        className="flex-1 bg-muted text-xs sm:text-sm"
                                     />
-                                    <Button size="icon" variant="outline" onClick={copyLink}>
+                                    <Button size="icon" variant="outline" onClick={copyLink} className="shrink-0">
                                         <Copy className="h-4 w-4" />
                                     </Button>
                                 </div>
@@ -149,9 +150,9 @@ export function ShareDialog({ file, isOpen, onClose }: ShareDialogProps) {
                     </div>
                 )}
 
-                <DialogFooter>
-                    <Button variant="outline" onClick={onClose}>Close</Button>
-                    <Button onClick={handleSave} disabled={isLoading || isSaving}>
+                <DialogFooter className="gap-2 sm:gap-0">
+                    <Button variant="outline" onClick={onClose} className="w-full sm:w-auto text-sm">Close</Button>
+                    <Button onClick={handleSave} disabled={isLoading || isSaving} className="w-full sm:w-auto text-sm">
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Save Changes
                     </Button>

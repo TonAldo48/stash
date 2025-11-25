@@ -22,19 +22,19 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-muted/40 p-4 relative">
-      <div className="absolute top-4 right-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-muted/40 px-4 py-8 relative">
+      <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
         <ModeToggle />
       </div>
-      <div className="mb-8 flex flex-col items-center space-y-4">
-        <Package2 className="h-12 w-12" />
-        <h1 className="text-2xl font-light tracking-tight text-foreground">Log in to Stash</h1>
+      <div className="mb-6 sm:mb-8 flex flex-col items-center space-y-3 sm:space-y-4">
+        <Package2 className="h-10 w-10 sm:h-12 sm:w-12" />
+        <h1 className="text-xl sm:text-2xl font-light tracking-tight text-foreground text-center">Log in to Stash</h1>
       </div>
 
       <Card className="w-full max-w-sm border-border shadow-sm bg-card">
-        <CardContent className="grid gap-4 pt-6">
-          <Button onClick={handleLogin} className="w-full bg-[#24292f] hover:bg-[#24292f]/90 text-white font-medium h-11 shadow-sm">
-            <Github className="mr-2 h-5 w-5" />
+        <CardContent className="grid gap-4 p-4 sm:pt-6 sm:p-6">
+          <Button onClick={handleLogin} className="w-full bg-[#24292f] hover:bg-[#24292f]/90 text-white font-medium h-10 sm:h-11 shadow-sm text-sm sm:text-base">
+            <Github className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
             Log in with GitHub
           </Button>
         </CardContent>
