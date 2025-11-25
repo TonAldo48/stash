@@ -13,11 +13,11 @@ export default function Home() {
         </Link>
          <div className="ml-auto flex items-center gap-2">
              <ModeToggle />
-             <Link className="text-sm font-medium hover:underline underline-offset-4 mr-2" href="/login">
-                Sign In
-              </Link>
              <Button asChild variant="outline" size="sm">
-                <Link href="/login">Sign Up</Link>
+                <Link href="/login">
+                  <Github className="mr-2 h-4 w-4" />
+                  Log in with GitHub
+                </Link>
              </Button>
          </div>
       </header>
