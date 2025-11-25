@@ -2,13 +2,10 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
 export async function proxy(request: NextRequest) {
-  // Skip proxy for POST requests (Server Actions) to avoid body size limits
-  // Auth is still checked inside the Server Action itself.
-  // SECURITY WARNING: This bypasses proxy auth checks for ALL POST requests.
-  // Ensure that any new POST route handlers (e.g. app/api/...) manually verify authentication.
-  if (request.method === 'POST') {
-    return NextResponse.next();
-  }
+  // We must run the Supabase auth middleware on all requests, including POST,
+  // to ensure the session is refreshed and cookies are updated.
+  // This also ensures that Server Actions are protected by the same
+  // authentication rules as pages.
   
   return await updateSession(request)
 }
