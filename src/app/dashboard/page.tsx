@@ -45,18 +45,20 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import FileUpload05 from "@/components/ui/file-upload-1"
 
-const files = [
-  { id: 1, name: "Documents", type: "folder", size: "-", modified: "2 days ago" },
-  { id: 2, name: "Images", type: "folder", size: "-", modified: "1 week ago" },
-  { id: 3, name: "Work", type: "folder", size: "-", modified: "1 month ago" },
-  { id: 4, name: "presentation.pptx", type: "file", size: "2.4 MB", modified: "Yesterday" },
-  { id: 5, name: "budget.xlsx", type: "file", size: "1.1 MB", modified: "3 days ago" },
-  { id: 6, name: "notes.txt", type: "file", size: "12 KB", modified: "Just now" },
-  { id: 7, name: "profile.png", type: "file", size: "4.5 MB", modified: "1 week ago" },
-]
+import { listFiles } from "@/app/actions/files";
+import { useEffect } from "react";
 
 export default function DashboardPage() {
   const [view, setView] = useState<"list" | "grid">("list")
+  const [files, setFiles] = useState<any[]>([])
+  
+  useEffect(() => {
+    listFiles().then(res => {
+        if (res.files) {
+            setFiles(res.files)
+        }
+    })
+  }, [])
 
   return (
     <div className="flex flex-col gap-4">

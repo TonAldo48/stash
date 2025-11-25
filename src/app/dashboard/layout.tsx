@@ -24,12 +24,24 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { checkDriveStatus } from "@/app/actions/drive"
+import DriveOnboarding from "@/components/drive-onboarding"
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const isInitialized = await checkDriveStatus();
+
+  if (!isInitialized) {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-muted/40">
+            <DriveOnboarding />
+        </div>
+    )
+  }
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-muted/40 md:block">

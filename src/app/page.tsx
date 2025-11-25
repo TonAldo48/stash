@@ -10,12 +10,7 @@ export default function Home() {
           <Github className="h-6 w-6 mr-2" />
           <span className="font-bold">GitDrive</span>
         </Link>
-        <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="#">
-            About
-          </Link>
-        </nav>
-         <div className="ml-4 flex items-center gap-2">
+         <div className="ml-auto flex items-center gap-2">
              <Link className="text-sm font-medium hover:underline underline-offset-4 mr-2" href="/login">
                 Sign In
               </Link>
