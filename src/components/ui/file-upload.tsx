@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { FileSpreadsheet, Upload, X } from "lucide-react";
 import { useState } from "react";
 import { uploadFile } from "@/app/actions/upload";
+import { toast } from "sonner";
 
 export default function FileUpload({ onUploadComplete, currentPath = "/" }: { onUploadComplete?: () => void, currentPath?: string }) {
   const [isUploading, setIsUploading] = useState(false);
@@ -19,9 +20,9 @@ export default function FileUpload({ onUploadComplete, currentPath = "/" }: { on
     setIsUploading(false);
     
     if (res.error) {
-        alert(res.error);
+        toast.error(res.error);
     } else {
-        alert("Upload complete!");
+        toast.success("File uploaded successfully");
         setSelectedFile(null);
         onUploadComplete?.();
     }

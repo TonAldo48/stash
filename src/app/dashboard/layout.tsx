@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/server"
 import { UserNav } from "@/components/user-nav"
 import { StorageWidget } from "@/components/storage-widget"
 import { SearchBar } from "@/components/search-bar"
+import { ModeToggle } from "@/components/mode-toggle"
 
 export default async function DashboardLayout({
   children,
@@ -108,6 +109,7 @@ export default async function DashboardLayout({
           <div className="w-full flex-1">
             <SearchBar />
           </div>
+          <ModeToggle />
           <UserNav email={user?.email} avatarUrl={user?.user_metadata?.avatar_url} />
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">

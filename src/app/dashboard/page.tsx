@@ -13,6 +13,7 @@ import {
   Loader2
 } from "lucide-react"
 import { useState, useEffect, useCallback } from "react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -44,6 +45,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import FileUpload from "@/components/ui/file-upload"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 
 import { listFiles, createFolder, deleteItem, downloadFile } from "@/app/actions/files";
 
@@ -58,6 +60,8 @@ export default function DashboardPage() {
   const [isDownloading, setIsDownloading] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const [isCreatingFolder, setIsCreatingFolder] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [itemToDelete, setItemToDelete] = useState<{ id: string, type: "file" | "folder" } | null>(null)
   
   const fetchFiles = useCallback(async () => {
     setIsLoading(true)
@@ -78,25 +82,36 @@ export default function DashboardPage() {
     const result = await createFolder(newFolderName, currentPath);
     setIsCreatingFolder(false);
     if (result.error) {
-        alert(result.error);
+        toast.error(result.error);
         return;
     }
+    toast.success("Folder created successfully");
     setNewFolderName("");
     setIsCreateFolderOpen(false);
     fetchFiles();
   }
 
-  const handleDelete = async (id: string, type: "file" | "folder") => {
-    if (confirm("Are you sure you want to delete this item?")) {
-        setIsDeleting(id);
-        const result = await deleteItem(id, type);
-        setIsDeleting(null);
-        if (result.error) {
-            alert(result.error);
-            return;
-        }
-        fetchFiles();
+  const handleDeleteClick = (id: string, type: "file" | "folder") => {
+    setItemToDelete({ id, type })
+    setDeleteConfirmOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    
+    const { id, type } = itemToDelete
+    setIsDeleting(id);
+    const result = await deleteItem(id, type);
+    setIsDeleting(null);
+    setDeleteConfirmOpen(false)
+    setItemToDelete(null)
+    
+    if (result.error) {
+        toast.error(result.error);
+        return;
     }
+    toast.success(`${type === 'folder' ? 'Folder' : 'File'} deleted successfully`);
+    fetchFiles();
   }
 
   const handleDownload = async (fileId: string, fileName: string) => {
@@ -105,7 +120,7 @@ export default function DashboardPage() {
     setIsDownloading(null);
     
     if (result.error) {
-        alert(result.error);
+        toast.error(result.error);
         return;
     }
     
@@ -127,6 +142,7 @@ export default function DashboardPage() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        toast.success("Download started");
     }
   }
 
@@ -301,7 +317,7 @@ export default function DashboardPage() {
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(file.id, file.type)}>
+                        <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteClick(file.id, file.type)}>
                              <Trash className="mr-2 h-4 w-4" /> Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -348,7 +364,7 @@ export default function DashboardPage() {
                              <Download className="mr-2 h-4 w-4" /> Download
                            </DropdownMenuItem>
                          )}
-                         <DropdownMenuItem className="text-red-600" onClick={(e) => { e.stopPropagation(); handleDelete(file.id, file.type); }}>
+                         <DropdownMenuItem className="text-red-600" onClick={(e) => { e.stopPropagation(); handleDeleteClick(file.id, file.type); }}>
                            <Trash className="mr-2 h-4 w-4" /> Delete
                          </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -368,6 +384,14 @@ export default function DashboardPage() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Are you sure?"
+        description="This action cannot be undone. This will permanently delete the item."
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }
