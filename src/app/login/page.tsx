@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Github } from "lucide-react"
+import { Github, Package2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { ModeToggle } from "@/components/mode-toggle"
 
@@ -24,8 +24,8 @@ export default function LoginPage() {
         <ModeToggle />
       </div>
       <div className="mb-8 flex flex-col items-center space-y-4">
-        <Github className="h-12 w-12" />
-        <h1 className="text-2xl font-light tracking-tight text-foreground">Log in to GitDrive</h1>
+        <Package2 className="h-12 w-12" />
+        <h1 className="text-2xl font-light tracking-tight text-foreground">Log in to Stash</h1>
       </div>
 
       <Card className="w-full max-w-sm border-border shadow-sm bg-card">

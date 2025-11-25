@@ -14,9 +14,9 @@ export async function uploadFile(formData: FormData) {
   
   if (!file) return { error: "No file provided" };
   
-  // Check file size limit (GitHub has 100MB limit per file via API)
-  if (file.size > 100 * 1024 * 1024) {
-    return { error: "File size exceeds 100MB limit" };
+  // Check file size limit (10MB strict limit for now)
+  if (file.size > 10 * 1024 * 1024) {
+    return { error: "File size exceeds 10MB limit" };
   }
 
   const supabase = await createClient();

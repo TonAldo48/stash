@@ -175,6 +175,14 @@ export default function DashboardPage() {
       setCurrentPath(path);
   }
 
+  const handleItemClick = (file: FileItem) => {
+    if (file.type === "folder") {
+      handleNavigate(file.path ? `${file.path === '/' ? '' : file.path}/${file.name}` : `/${file.name}`)
+    } else {
+      setPreviewFile(file)
+    }
+  }
+
   const getBreadcrumbs = () => {
       const parts = currentPath.split("/").filter(Boolean);
       let path = "";
@@ -306,7 +314,7 @@ export default function DashboardPage() {
               ) : files.map((file) => (
                 <TableRow key={file.id} className={isDeleting === file.id ? "opacity-50" : ""}>
                   <TableCell className="font-medium">
-                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => file.type === "folder" && handleNavigate(file.path ? `${file.path === '/' ? '' : file.path}/${file.name}` : `/${file.name}`)}>
+                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => handleItemClick(file)}>
                       {file.type === "folder" ? (
                         <Folder className="h-4 w-4 text-blue-500 fill-blue-500" />
                       ) : (
@@ -378,7 +386,7 @@ export default function DashboardPage() {
             <Card key={file.id} className={`overflow-hidden ${isDeleting === file.id ? "opacity-50" : ""}`}>
               <CardContent 
                 className="p-4 flex flex-col items-center gap-2 relative group cursor-pointer"
-                onClick={() => file.type === "folder" && handleNavigate(file.path ? `${file.path === '/' ? '' : file.path}/${file.name}` : `/${file.name}`)}
+                onClick={() => handleItemClick(file)}
               >
                  <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <DropdownMenu>

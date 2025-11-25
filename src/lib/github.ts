@@ -55,7 +55,7 @@ export class GitHubService {
             // We can try `octokit.rest.users.getAuthenticated()` but for an App it returns the App bot user.
             // We need the OWNER of the repo.
             
-            // For our specific use case (GitDrive), the Repo Owner is always the user who installed the app.
+            // For our specific use case (Stash), the Repo Owner is always the user who installed the app.
             // We can simply hardcode the known owner if we had it, or fetch it from the installation.
             
             // Let's try to get the installation.

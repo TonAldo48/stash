@@ -40,7 +40,7 @@ export default async function DashboardLayout({
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/" className="flex items-center gap-2 font-semibold">
               <Package2 className="h-6 w-6" />
-              <span className="">GitDrive</span>
+              <span className="">Stash</span>
             </Link>
           </div>
           <div className="flex-1">
@@ -88,7 +88,7 @@ export default async function DashboardLayout({
                   className="flex items-center gap-2 text-lg font-semibold"
                 >
                   <Package2 className="h-6 w-6" />
-                  <span>GitDrive</span>
+                  <span>Stash</span>
                 </Link>
                 <Link
                   href="/dashboard"

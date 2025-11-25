@@ -34,7 +34,7 @@ export default function DriveOnboarding() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <HardDrive className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle>Welcome to GitDrive</CardTitle>
+          <CardTitle>Welcome to Stash</CardTitle>
           <CardDescription>
             To get started, we need to create a private repository in your GitHub account to store your files and metadata.
           </CardDescription>
@@ -43,8 +43,7 @@ export default function DriveOnboarding() {
           <div className="rounded-lg border bg-muted/50 p-4 text-sm text-muted-foreground">
             <p>We will create:</p>
             <ul className="ml-4 mt-2 list-disc">
-              <li><strong>gitdrive-root</strong>: For tracking your file index</li>
-              <li><strong>gitdrive-storage-001</strong>: For storing your files</li>
+              <li><strong>stash-storage-001</strong>: For storing your files</li>
             </ul>
           </div>
           <Button onClick={handleInitialize} disabled={isLoading} className="w-full">

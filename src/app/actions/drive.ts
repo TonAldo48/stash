@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { GitHubService } from "@/lib/github";
 
-const STORAGE_REPO_PREFIX = "gitdrive-storage";
+const STORAGE_REPO_PREFIX = "stash-storage";
 
 export async function initializeDrive() {
   const supabase = await createClient();

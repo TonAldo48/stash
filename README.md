@@ -1,6 +1,6 @@
-# GitDrive
+# Stash
 
-GitDrive is an open-source cloud storage application built on top of Git and GitHub. It leverages the power of version control to provide secure, versioned, and unlimited private cloud storage using your GitHub repositories.
+Stash is an open-source cloud storage application built on top of Git and GitHub. It leverages the power of version control to provide secure, versioned, and unlimited private cloud storage using your GitHub repositories.
 
 ## Features
 
@@ -12,7 +12,7 @@ GitDrive is an open-source cloud storage application built on top of Git and Git
   - View files in Grid or List layouts.
   - Trash and restore functionality (planned).
 - **Version Control**: Automatic file versioning powered by Git.
-- **Modern UI**: A clean, responsive interface styled with Shadcn UI and Tailwind CSS, mimicking GitHub's Primer design system.
+- **Modern UI**: A clean, responsive interface styled with Shadcn UI and Tailwind CSS.
 
 ## Tech Stack
 
@@ -33,8 +33,8 @@ GitDrive is an open-source cloud storage application built on top of Git and Git
 
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/gitdrive.git
-    cd gitdrive
+    git clone https://github.com/yourusername/stash.git
+    cd stash
     ```
 
 2.  Install dependencies:

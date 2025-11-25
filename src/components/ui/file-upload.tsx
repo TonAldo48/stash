@@ -12,6 +12,8 @@ interface FileStatus {
     errorMessage?: string;
 }
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
 export default function FileUpload({ onUploadComplete, currentPath = "/" }: { onUploadComplete?: () => void, currentPath?: string }) {
   const [files, setFiles] = useState<FileStatus[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -22,11 +24,8 @@ export default function FileUpload({ onUploadComplete, currentPath = "/" }: { on
             file,
             status: 'pending' as const
         }));
-        // Append to existing files, avoiding duplicates if possible? 
-        // Simplest is just append. User can remove if they want.
         setFiles(prev => [...prev, ...newFiles]);
     }
-    // Reset input value so same file can be selected again if needed (though usually not needed for this UI)
     e.target.value = '';
   };
 
@@ -39,16 +38,18 @@ export default function FileUpload({ onUploadComplete, currentPath = "/" }: { on
     if (pendingFiles.length === 0) return;
 
     setIsUploading(true);
-
-    // Process files one by one or in small batches to provide progress feedback
-    // For simplicity and feedback, one by one is good.
     
     let successCount = 0;
 
     for (let i = 0; i < files.length; i++) {
-        if (files[i].status === 'success') continue; // Skip already uploaded
+        if (files[i].status === 'success') continue;
 
-        // Update status to uploading
+        // Check size limit
+        if (files[i].file.size > MAX_FILE_SIZE) {
+            setFiles(prev => prev.map((f, idx) => idx === i ? { ...f, status: 'error', errorMessage: "File exceeds 10MB limit" } : f));
+            continue;
+        }
+
         setFiles(prev => prev.map((f, idx) => idx === i ? { ...f, status: 'uploading' } : f));
 
         const formData = new FormData();
@@ -74,8 +75,6 @@ export default function FileUpload({ onUploadComplete, currentPath = "/" }: { on
     if (successCount > 0) {
         toast.success(`Uploaded ${successCount} file${successCount !== 1 ? 's' : ''} successfully`);
         onUploadComplete?.();
-        // Optionally clear successful uploads? 
-        // Maybe keep them to show success state, let user clear manually or close dialog.
     }
   }
 
@@ -105,7 +104,7 @@ export default function FileUpload({ onUploadComplete, currentPath = "/" }: { on
               <p className="pl-1">or drag and drop</p>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Max file size: 100MB per file
+              Max file size: 10MB per file
             </p>
           </div>
         </Label>
