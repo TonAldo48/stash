@@ -5,13 +5,19 @@ import { GitHubService } from "@/lib/github";
 import { FileItem } from "./files";
 
 const ROOT_REPO = "gitdrive-root";
-const STORAGE_REPO_PREFIX = "gitdrive-storage-001"; // Hardcoded for MVP
+const STORAGE_REPO_PREFIX = "gitdrive-storage";
+const MAX_REPO_SIZE = 4 * 1024 * 1024 * 1024; // 4GB threshold before creating new repo
 
 export async function uploadFile(formData: FormData) {
   const file = formData.get("file") as File;
   const path = (formData.get("path") as string) || "/";
   
   if (!file) return { error: "No file provided" };
+  
+  // Check file size limit (GitHub has 100MB limit per file via API)
+  if (file.size > 100 * 1024 * 1024) {
+    return { error: "File size exceeds 100MB limit" };
+  }
 
   const supabase = await createClient();
   const {
@@ -31,16 +37,36 @@ export async function uploadFile(formData: FormData) {
 
     const metadata = JSON.parse(metaFile.content);
     
-    // Determine active repo
-    const activeRepo = metadata.system?.active_repo || "gitdrive-storage-001";
+    // Initialize system metadata if not present
+    if (!metadata.system) {
+      metadata.system = {
+        active_repo: `${STORAGE_REPO_PREFIX}-001`,
+        repos: [`${STORAGE_REPO_PREFIX}-001`]
+      };
+    }
+    
+    // Check if we need to create a new storage repo
+    let activeRepo = metadata.system.active_repo;
+    const repoSize = await github.getRepoSize(activeRepo);
+    
+    if (repoSize > MAX_REPO_SIZE) {
+      // Create a new storage repo
+      const repoCount = metadata.system.repos.length + 1;
+      const newRepoName = `${STORAGE_REPO_PREFIX}-${String(repoCount).padStart(3, '0')}`;
+      
+      await github.createRepo(newRepoName);
+      
+      metadata.system.repos.push(newRepoName);
+      metadata.system.active_repo = newRepoName;
+      activeRepo = newRepoName;
+    }
 
     // 1. Ensure storage repo exists
     await github.createRepo(activeRepo);
 
     // 2. Upload Blob
     const buffer = Buffer.from(await file.arrayBuffer());
-    // Use a unique name or keep original? For this plan: "Commits file blob... Updates metadata"
-    // We'll store it in `blobs/<timestamp>-<filename>` to avoid collision
+    // Use a unique name to avoid collision
     const blobName = `blobs/${Date.now()}-${file.name}`;
     
     await github.uploadFile(
@@ -55,7 +81,7 @@ export async function uploadFile(formData: FormData) {
         name: file.name,
         type: "file",
         size: formatBytes(file.size),
-        modified: new Date().toISOString(), // Git doesn't give us this easily, use upload time
+        modified: new Date().toISOString(),
         path: path,
         repo: activeRepo,
         sha: blobName // Storing the path in the repo as the reference

@@ -10,8 +10,7 @@ import {
   Plus,
   Download,
   Trash,
-  Upload,
-  Share2
+  Loader2
 } from "lucide-react"
 import { useState, useEffect, useCallback } from "react"
 
@@ -40,13 +39,13 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import FileUpload from "@/components/ui/file-upload"
 
-import { listFiles, createFolder, deleteItem } from "@/app/actions/files";
+import { listFiles, createFolder, deleteItem, downloadFile } from "@/app/actions/files";
 
 export default function DashboardPage() {
   const [view, setView] = useState<"list" | "grid">("list")
@@ -55,13 +54,18 @@ export default function DashboardPage() {
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false)
   const [isUploadOpen, setIsUploadOpen] = useState(false)
   const [newFolderName, setNewFolderName] = useState("")
+  const [isLoading, setIsLoading] = useState(true)
+  const [isDownloading, setIsDownloading] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState<string | null>(null)
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false)
   
-  const fetchFiles = useCallback(() => {
-    listFiles(currentPath).then(res => {
-        if (res.files) {
-            setFiles(res.files)
-        }
-    })
+  const fetchFiles = useCallback(async () => {
+    setIsLoading(true)
+    const res = await listFiles(currentPath)
+    if (res.files) {
+        setFiles(res.files)
+    }
+    setIsLoading(false)
   }, [currentPath])
 
   useEffect(() => {
@@ -70,7 +74,13 @@ export default function DashboardPage() {
 
   const handleCreateFolder = async () => {
     if (!newFolderName) return;
-    await createFolder(newFolderName, currentPath);
+    setIsCreatingFolder(true);
+    const result = await createFolder(newFolderName, currentPath);
+    setIsCreatingFolder(false);
+    if (result.error) {
+        alert(result.error);
+        return;
+    }
     setNewFolderName("");
     setIsCreateFolderOpen(false);
     fetchFiles();
@@ -78,8 +88,45 @@ export default function DashboardPage() {
 
   const handleDelete = async (id: string, type: "file" | "folder") => {
     if (confirm("Are you sure you want to delete this item?")) {
-        await deleteItem(id, type);
+        setIsDeleting(id);
+        const result = await deleteItem(id, type);
+        setIsDeleting(null);
+        if (result.error) {
+            alert(result.error);
+            return;
+        }
         fetchFiles();
+    }
+  }
+
+  const handleDownload = async (fileId: string, fileName: string) => {
+    setIsDownloading(fileId);
+    const result = await downloadFile(fileId);
+    setIsDownloading(null);
+    
+    if (result.error) {
+        alert(result.error);
+        return;
+    }
+    
+    if (result.content) {
+        // Convert base64 to blob and download
+        const byteCharacters = atob(result.content);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray]);
+        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
   }
 
@@ -154,7 +201,10 @@ export default function DashboardPage() {
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button onClick={handleCreateFolder}>Create</Button>
+                    <Button onClick={handleCreateFolder} disabled={isCreatingFolder || !newFolderName}>
+                      {isCreatingFolder && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {isCreatingFolder ? "Creating..." : "Create"}
+                    </Button>
                 </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -197,14 +247,23 @@ export default function DashboardPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {files.length === 0 ? (
+              {isLoading ? (
+                  <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8">
+                          <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Loading files...
+                          </div>
+                      </TableCell>
+                  </TableRow>
+              ) : files.length === 0 ? (
                   <TableRow>
                       <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                           No files found. Upload a file or create a folder to get started.
                       </TableCell>
                   </TableRow>
               ) : files.map((file) => (
-                <TableRow key={file.id}>
+                <TableRow key={file.id} className={isDeleting === file.id ? "opacity-50" : ""}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2 cursor-pointer" onClick={() => file.type === "folder" && handleNavigate(file.path ? `${file.path === '/' ? '' : file.path}/${file.name}` : `/${file.name}`)}>
                       {file.type === "folder" ? (
@@ -224,16 +283,23 @@ export default function DashboardPage() {
                           aria-haspopup="true"
                           size="icon"
                           variant="ghost"
+                          disabled={isDeleting === file.id || isDownloading === file.id}
                         >
-                          <MoreHorizontal className="h-4 w-4" />
+                          {isDownloading === file.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <MoreHorizontal className="h-4 w-4" />
+                          )}
                           <span className="sr-only">Toggle menu</span>
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>
-                            <Download className="mr-2 h-4 w-4" /> Download
-                        </DropdownMenuItem>
+                        {file.type === "file" && (
+                          <DropdownMenuItem onClick={() => handleDownload(file.id, file.name)}>
+                              <Download className="mr-2 h-4 w-4" /> Download
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(file.id, file.type)}>
                              <Trash className="mr-2 h-4 w-4" /> Delete
@@ -246,10 +312,21 @@ export default function DashboardPage() {
             </TableBody>
           </Table>
         </div>
+      ) : isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            Loading files...
+          </div>
+        </div>
+      ) : files.length === 0 ? (
+        <div className="flex items-center justify-center py-12 text-muted-foreground">
+          No files found. Upload a file or create a folder to get started.
+        </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {files.map((file) => (
-            <Card key={file.id} className="overflow-hidden">
+            <Card key={file.id} className={`overflow-hidden ${isDeleting === file.id ? "opacity-50" : ""}`}>
               <CardContent 
                 className="p-4 flex flex-col items-center gap-2 relative group cursor-pointer"
                 onClick={() => file.type === "folder" && handleNavigate(file.path ? `${file.path === '/' ? '' : file.path}/${file.name}` : `/${file.name}`)}
@@ -257,12 +334,23 @@ export default function DashboardPage() {
                  <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button size="icon" variant="ghost" className="h-6 w-6">
-                          <MoreHorizontal className="h-4 w-4" />
+                        <Button size="icon" variant="ghost" className="h-6 w-6" disabled={isDeleting === file.id || isDownloading === file.id}>
+                          {isDownloading === file.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <MoreHorizontal className="h-4 w-4" />
+                          )}
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                         <DropdownMenuItem className="text-red-600" onClick={() => handleDelete(file.id, file.type)}>Delete</DropdownMenuItem>
+                         {file.type === "file" && (
+                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDownload(file.id, file.name); }}>
+                             <Download className="mr-2 h-4 w-4" /> Download
+                           </DropdownMenuItem>
+                         )}
+                         <DropdownMenuItem className="text-red-600" onClick={(e) => { e.stopPropagation(); handleDelete(file.id, file.type); }}>
+                           <Trash className="mr-2 h-4 w-4" /> Delete
+                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                  </div>
