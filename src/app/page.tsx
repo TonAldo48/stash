@@ -54,7 +54,7 @@ export default function Home() {
                     </Link>
                   </Button>
                   <Button variant="outline" className="h-11 px-8 rounded-md bg-background hover:bg-accent">
-                    <Link href="https://github.com" target="_blank">
+                    <Link href="https://github.com/TonAldo48/stash" target="_blank">
                       View on GitHub
                     </Link>
                   </Button>
