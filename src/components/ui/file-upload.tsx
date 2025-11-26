@@ -3,16 +3,20 @@ import { Label } from "@/components/ui/label";
 import { File as FileIcon, Upload, X, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { useState, useCallback } from "react";
 import { uploadFile } from "@/app/actions/upload";
+import { ChunkedUploader, UploadProgress } from "@/lib/chunked-upload";
 import { toast } from "sonner";
 import { formatBytes } from "@/lib/utils";
 
 interface FileStatus {
     file: File;
-    status: 'pending' | 'uploading' | 'success' | 'error';
+    status: 'pending' | 'uploading' | 'finalizing' | 'success' | 'error';
     errorMessage?: string;
+    progress?: number;
+    uploader?: ChunkedUploader;
 }
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024; // 10GB
+const CHUNKED_UPLOAD_THRESHOLD = 10 * 1024 * 1024; // Use chunked upload for files > 10MB
 
 export default function FileUpload({ onUploadComplete, currentPath = "/" }: { onUploadComplete?: () => void, currentPath?: string }) {
   const [files, setFiles] = useState<FileStatus[]>([]);
@@ -46,27 +50,77 @@ export default function FileUpload({ onUploadComplete, currentPath = "/" }: { on
 
         // Check size limit
         if (files[i].file.size > MAX_FILE_SIZE) {
-            setFiles(prev => prev.map((f, idx) => idx === i ? { ...f, status: 'error', errorMessage: "File exceeds 10MB limit" } : f));
+            setFiles(prev => prev.map((f, idx) => idx === i ? { ...f, status: 'error', errorMessage: `File exceeds ${formatBytes(MAX_FILE_SIZE)} limit` } : f));
             continue;
         }
 
-        setFiles(prev => prev.map((f, idx) => idx === i ? { ...f, status: 'uploading' } : f));
+        // Choose upload method based on file size
+        if (files[i].file.size > CHUNKED_UPLOAD_THRESHOLD) {
+            // Use chunked upload for large files
+            setFiles(prev => prev.map((f, idx) => idx === i ? { ...f, status: 'uploading', progress: 0 } : f));
 
-        const formData = new FormData();
-        formData.append("file", files[i].file);
-        formData.append("path", currentPath);
+            try {
+                const uploader = new ChunkedUploader({
+                    file: files[i].file,
+                    targetPath: currentPath,
+                    onProgress: (progress: UploadProgress) => {
+                        setFiles(prev => prev.map((f, idx) => 
+                            idx === i ? { 
+                                ...f, 
+                                status: progress.status === 'completed' ? 'success' : progress.status,
+                                progress: progress.progress 
+                            } : f
+                        ));
+                    },
+                    onError: (error: string) => {
+                        setFiles(prev => prev.map((f, idx) => 
+                            idx === i ? { ...f, status: 'error', errorMessage: error } : f
+                        ));
+                    },
+                    onComplete: () => {
+                        setFiles(prev => prev.map((f, idx) => 
+                            idx === i ? { ...f, status: 'success', progress: 100 } : f
+                        ));
+                        successCount++;
+                        if (successCount === pendingFiles.length) {
+                            setIsUploading(false);
+                            toast.success(`Uploaded ${successCount} file${successCount !== 1 ? 's' : ''} successfully`);
+                            onUploadComplete?.();
+                        }
+                    },
+                });
 
-        try {
-            const res = await uploadFile(formData);
-            
-            if (res.error) {
-                setFiles(prev => prev.map((f, idx) => idx === i ? { ...f, status: 'error', errorMessage: res.error } : f));
-            } else {
-                setFiles(prev => prev.map((f, idx) => idx === i ? { ...f, status: 'success' } : f));
-                successCount++;
+                // Store uploader for potential abort
+                setFiles(prev => prev.map((f, idx) => 
+                    idx === i ? { ...f, uploader } : f
+                ));
+
+                await uploader.start();
+            } catch (error: any) {
+                setFiles(prev => prev.map((f, idx) => 
+                    idx === i ? { ...f, status: 'error', errorMessage: error.message || "Upload failed" } : f
+                ));
             }
-        } catch (error) {
-            setFiles(prev => prev.map((f, idx) => idx === i ? { ...f, status: 'error', errorMessage: "Upload failed" } : f));
+        } else {
+            // Use regular upload for small files
+            setFiles(prev => prev.map((f, idx) => idx === i ? { ...f, status: 'uploading' } : f));
+
+            const formData = new FormData();
+            formData.append("file", files[i].file);
+            formData.append("path", currentPath);
+
+            try {
+                const res = await uploadFile(formData);
+                
+                if (res.error) {
+                    setFiles(prev => prev.map((f, idx) => idx === i ? { ...f, status: 'error', errorMessage: res.error } : f));
+                } else {
+                    setFiles(prev => prev.map((f, idx) => idx === i ? { ...f, status: 'success' } : f));
+                    successCount++;
+                }
+            } catch (error) {
+                setFiles(prev => prev.map((f, idx) => idx === i ? { ...f, status: 'error', errorMessage: "Upload failed" } : f));
+            }
         }
     }
 
@@ -104,7 +158,7 @@ export default function FileUpload({ onUploadComplete, currentPath = "/" }: { on
               <p className="pl-1">or drag and drop</p>
             </div>
             <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
-              Max file size: 10MB per file
+              Max file size: {formatBytes(MAX_FILE_SIZE)} per file
             </p>
           </div>
         </Label>
@@ -126,26 +180,64 @@ export default function FileUpload({ onUploadComplete, currentPath = "/" }: { on
                                 <FileIcon className="h-4 w-4 text-muted-foreground shrink-0" />
                             )}
                             
-                            <div className="flex flex-col min-w-0">
+                            <div className="flex flex-col min-w-0 flex-1">
                                 <span className="truncate font-medium text-xs sm:text-sm">{fileStatus.file.name}</span>
-                                <span className="text-[10px] sm:text-xs text-muted-foreground">
-                                    {formatBytes(fileStatus.file.size)} 
-                                    {fileStatus.errorMessage && <span className="text-red-500 ml-1 sm:ml-2">• {fileStatus.errorMessage}</span>}
-                                </span>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    <span className="text-[10px] sm:text-xs text-muted-foreground">
+                                        {formatBytes(fileStatus.file.size)} 
+                                        {fileStatus.errorMessage && <span className="text-red-500 ml-1 sm:ml-2">• {fileStatus.errorMessage}</span>}
+                                    </span>
+                                    {fileStatus.progress !== undefined && fileStatus.status === 'uploading' && (
+                                        <span className="text-[10px] sm:text-xs text-blue-500">
+                                            {Math.round(fileStatus.progress)}%
+                                        </span>
+                                    )}
+                                </div>
+                                {fileStatus.progress !== undefined && fileStatus.status === 'uploading' && (
+                                    <div className="mt-1 w-full bg-secondary rounded-full h-1">
+                                        <div 
+                                            className="bg-blue-500 h-1 rounded-full transition-all duration-300"
+                                            style={{ width: `${fileStatus.progress}%` }}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
                         
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 text-muted-foreground hover:text-red-500 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0"
-                            onClick={() => removeFile(index)}
-                            disabled={fileStatus.status === 'uploading' || fileStatus.status === 'success'}
-                        >
-                            <X className="h-4 w-4" />
-                            <span className="sr-only">Remove</span>
-                        </Button>
+                        <div className="flex items-center gap-1">
+                            {fileStatus.status === 'uploading' && fileStatus.uploader && (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 text-muted-foreground hover:text-orange-500 shrink-0"
+                                    onClick={() => {
+                                        fileStatus.uploader?.abort();
+                                        removeFile(index);
+                                    }}
+                                    title="Cancel upload"
+                                >
+                                    <X className="h-4 w-4" />
+                                    <span className="sr-only">Cancel</span>
+                                </Button>
+                            )}
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-muted-foreground hover:text-red-500 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0"
+                                onClick={() => {
+                                    if (fileStatus.uploader) {
+                                        fileStatus.uploader.abort();
+                                    }
+                                    removeFile(index);
+                                }}
+                                disabled={fileStatus.status === 'uploading' || fileStatus.status === 'success'}
+                            >
+                                <X className="h-4 w-4" />
+                                <span className="sr-only">Remove</span>
+                            </Button>
+                        </div>
                     </div>
                 ))}
             </div>
