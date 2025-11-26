@@ -46,7 +46,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import FileUpload from "@/components/ui/file-upload"
+import ChunkedFileUpload from "@/components/ui/chunked-file-upload"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { FilePreview } from "@/components/file-preview"
 import { ShareDialog } from "@/components/share-dialog"
@@ -268,13 +268,12 @@ export default function DashboardPage() {
                 </span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg p-0 border-none bg-transparent shadow-none max-w-[calc(100%-2rem)]">
+            <DialogContent className="sm:max-w-xl p-0 border-none bg-transparent shadow-none max-w-[calc(100%-2rem)]">
               <DialogTitle className="sr-only">Upload File</DialogTitle>
               <Card className="w-full">
-                 <FileUpload 
+                 <ChunkedFileUpload 
                     currentPath={currentPath}
                     onUploadComplete={() => {
-                        setIsUploadOpen(false);
                         fetchFiles();
                     }} 
                  />
