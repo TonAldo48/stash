@@ -49,6 +49,32 @@ Stash is an open-source cloud storage application built on top of Git and GitHub
 
 4.  Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Backend Upload Service
+
+Large uploads are processed by the Go service under `backend/`. It handles chunk ingestion, temporary storage, GitHub persistence (repo chunks or release assets), and database bookkeeping.
+
+```bash
+cd backend
+go run ./cmd/server
+```
+
+The service exposes `/uploads/*` endpoints that the Next.js API routes proxy to. Run it alongside `npm run dev`.
+
+### Environment Variables
+
+| Variable | Description |
+| --- | --- |
+| `DATABASE_URL` | Postgres/Supabase connection string used by the Go service |
+| `UPLOAD_SERVICE_API_KEY` | Shared secret between Next.js and the Go service |
+| `GITHUB_ACCESS_TOKEN` | Token (PAT or GitHub App installation token) with `repo` + `contents:write` scope |
+| `GITHUB_STORAGE_OWNER` | GitHub username/organization that owns the storage repo |
+| `GITHUB_STORAGE_REPO` | Repository that stores manifests/chunks (e.g. `gitdrive-storage`) |
+| `UPLOAD_SERVICE_URL` | Base URL of the Go service (e.g. `http://localhost:8080`) |
+
+Optional tunables (Go service): `UPLOAD_CHUNK_SIZE`, `UPLOAD_MAX_SIZE`, `UPLOAD_RELEASE_MAX_BYTES`, `UPLOAD_ENABLE_RELEASE_ASSETS`, `UPLOAD_ENABLE_GIT_LFS`, `UPLOAD_TEMP_DIR`.
+
+Run the SQL in `backend/migrations/001_chunked_uploads.sql` (or add it to Supabase) to provision the `uploads` tables and `storage_strategy` columns referenced by the app.
+
 ## Project Structure
 
 - `src/app`: Next.js App Router pages and layouts.

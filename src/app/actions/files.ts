@@ -1,5 +1,7 @@
 "use server";
 
+import { Buffer } from "node:buffer";
+
 import { createClient } from "@/lib/supabase/server";
 import { GitHubService } from "@/lib/github";
 import { formatBytes } from "@/lib/utils";
@@ -11,8 +13,10 @@ export interface FileItem {
   size: string;
   modified: string;
   path: string;
-  repo?: string; // For files
+  repo?: string;
   sha?: string;
+  storageStrategy?: string;
+  storageMetadata?: Record<string, any> | null;
 }
 
 export async function listFiles(path: string = "/") {
@@ -29,9 +33,9 @@ export async function listFiles(path: string = "/") {
 
     const { data: dbFiles, error } = await supabase
         .from('files')
-        .select('*')
+        .select('id, name, type, size_bytes, created_at, path, repo_name, blob_path, storage_strategy, storage_metadata')
         .eq('path', currentPath)
-        .order('type', { ascending: false }) // Folders first
+        .order('type', { ascending: false })
         .order('name', { ascending: true });
 
     if (error) throw error;
@@ -44,7 +48,9 @@ export async function listFiles(path: string = "/") {
         modified: f.created_at,
         path: f.path,
         repo: f.repo_name,
-        sha: f.blob_path // using blob_path as sha/ref
+        sha: f.blob_path,
+        storageStrategy: f.storage_strategy,
+        storageMetadata: f.storage_metadata
     }));
 
     return { files };
@@ -135,16 +141,25 @@ export async function downloadFile(fileId: string) {
             return { error: "File metadata incomplete" };
         }
 
-        // Get the file content from the storage repo
-        const fileData = await github.getFileRaw(file.repo_name, file.blob_path);
-        
-        if (!fileData) {
-            return { error: "File not found in storage" };
+        const strategy = file.storage_strategy || "repo_single";
+        let buffer: Buffer | null = null;
+
+        if (strategy === "repo_chunks") {
+            buffer = await downloadFromChunks(github, file.repo_name, file.blob_path);
+        } else if (strategy === "release_asset") {
+            buffer = await downloadFromReleaseAsset(github, file.repo_name, file);
+        } else {
+            const fileData = await github.getFileRaw(file.repo_name, file.blob_path);
+            buffer = fileData?.content ?? null;
+        }
+
+        if (!buffer) {
+            return { error: "Unable to download file contents" };
         }
 
         return { 
             success: true, 
-            content: fileData.content.toString("base64"),
+            content: buffer.toString("base64"),
             name: file.name,
             size: formatBytes(file.size_bytes)
         };
@@ -226,4 +241,69 @@ export async function searchFiles(query: string) {
     } catch (error: any) {
         return { error: error.message };
     }
+}
+
+async function downloadFromChunks(
+    github: GitHubService,
+    repo: string,
+    manifestPath: string
+) {
+    const manifestData = await github.getFile(repo, manifestPath);
+    if (!manifestData?.content) {
+        return null;
+    }
+
+    const manifest = JSON.parse(manifestData.content);
+    const chunks = Array.isArray(manifest.chunks) ? manifest.chunks : [];
+    if (chunks.length === 0) {
+        throw new Error("Chunk manifest is empty");
+    }
+
+    const sortedChunks = chunks
+        .map((chunk: any) => ({
+            index: chunk.index ?? 0,
+            path: chunk.path,
+        }))
+        .sort((a: any, b: any) => a.index - b.index);
+
+    const buffers: Buffer[] = [];
+    for (const chunk of sortedChunks) {
+        if (!chunk.path) continue;
+        const chunkData = await github.getFileRaw(repo, chunk.path);
+        if (!chunkData?.content) {
+            throw new Error(`Missing chunk ${chunk.path}`);
+        }
+        buffers.push(chunkData.content);
+    }
+
+    return Buffer.concat(buffers);
+}
+
+async function downloadFromReleaseAsset(
+    github: GitHubService,
+    repo: string,
+    file: any
+) {
+    const metadata = file.storage_metadata || {};
+    const assetId =
+        metadata.assetId ??
+        parseIntFromBlobPath(file.blob_path);
+
+    if (!assetId) {
+        throw new Error("Release asset metadata missing");
+    }
+
+    const buffer = await github.downloadReleaseAsset(repo, assetId);
+    if (!buffer) {
+        throw new Error("Unable to fetch release asset");
+    }
+    return buffer;
+}
+
+function parseIntFromBlobPath(blobPath?: string) {
+    if (!blobPath?.startsWith("release:")) return null;
+    const parts = blobPath.split(":");
+    const assetPart = parts[2];
+    const assetId = Number(assetPart);
+    return Number.isNaN(assetId) ? null : assetId;
 }

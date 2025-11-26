@@ -1,3 +1,5 @@
+import { Buffer } from "node:buffer";
+
 import { Octokit } from "octokit";
 import { createAppAuth } from "@octokit/auth-app";
 
@@ -206,6 +208,54 @@ export class GitHubService {
          if (e.status === 404) return null;
          throw e;
      }
+  }
+
+  async downloadReleaseAsset(repo: string, assetId: number): Promise<Buffer | null> {
+    let owner = this.username;
+    if (!owner && this.isApp) {
+      const { data } = await this.octokit.rest.apps.listReposAccessibleToInstallation({ per_page: 1 });
+      if (data.repositories.length > 0) {
+        owner = data.repositories[0].owner.login;
+        this.username = owner;
+      } else {
+        throw new Error("App installation has no accessible repositories.");
+      }
+    } else if (!owner) {
+      owner = await this.getUser();
+    }
+
+    const response = await this.octokit.request(
+      "GET /repos/{owner}/{repo}/releases/assets/{asset_id}",
+      {
+        owner,
+        repo,
+        asset_id: assetId,
+        headers: {
+          Accept: "application/octet-stream",
+        },
+      }
+    );
+
+    const data = response.data as any;
+    if (!data) return null;
+
+    if (data instanceof ArrayBuffer) {
+      return Buffer.from(data);
+    }
+
+    if (Array.isArray(data)) {
+      return Buffer.from(data);
+    }
+
+    if (typeof data === "string") {
+      return Buffer.from(data, "binary");
+    }
+
+    if (data.type === "Buffer" && Array.isArray(data.data)) {
+      return Buffer.from(data.data);
+    }
+
+    return Buffer.from(data as Buffer);
   }
 
   async repoExists(name: string): Promise<boolean> {
